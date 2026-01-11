@@ -148,29 +148,31 @@ RUN mkdir -p \
 # -----------------------------
 # 10. Helper / startup scripts
 # -----------------------------
-# Start ComfyUI
-RUN echo '#!/usr/bin/env bash\n' \
-    'source ${WORKSPACE}/venv/bin/activate\n' \
-    'cd ${WORKSPACE}/comfyui\n' \
-    'python main.py --listen 0.0.0.0 --port 8188\n' \
-    > ${WORKSPACE}/scripts/start_comfyui.sh && \
-    chmod +x ${WORKSPACE}/scripts/start_comfyui.sh
-
-# Simple GPU check script
-RUN echo '#!/usr/bin/env bash\n' \
-    'source ${WORKSPACE}/venv/bin/activate\n' \
-    'python - <<EOF\n' \
-    'import torch\n' \
-    'print(\"CUDA available:\", torch.cuda.is_available())\n' \
-    'print(\"Device count:\", torch.cuda.device_count())\n' \
-    'print(\"Device name:\", torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"None\")\n' \
-    'EOF\n' \
-    > ${WORKSPACE}/scripts/check_gpu.py && \
-    chmod +x ${WORKSPACE}/scripts/check_gpu.py
+# Unified startup script
+RUN mkdir -p ${WORKSPACE}/scripts && \
+    echo '#!/usr/bin/env bash'                                     >  ${WORKSPACE}/scripts/start.sh && \
+    echo 'set -e'                                                 >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'echo "[start.sh] Activating virtual environment..."'    >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'source "${WORKSPACE}/venv/bin/activate"'                >> ${WORKSPACE}/scripts/start.sh && \
+    echo ''                                                       >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'echo "[start.sh] GPU info:"'                            >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'python - <<EOF'                                         >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'import torch'                                           >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'print("  CUDA available:", torch.cuda.is_available())'  >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'print("  Device count:", torch.cuda.device_count())'    >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'print("  Device name:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'EOF'                                                    >> ${WORKSPACE}/scripts/start.sh && \
+    echo ''                                                       >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'echo "[start.sh] Starting ComfyUI on 0.0.0.0:8188..."'  >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'cd "${WORKSPACE}/comfyui"'                              >> ${WORKSPACE}/scripts/start.sh && \
+    echo 'python main.py --listen 0.0.0.0 --port 8188'            >> ${WORKSPACE}/scripts/start.sh && \
+    chmod +x ${WORKSPACE}/scripts/start.sh
 
 # Default command: start ComfyUI; you can change this or override in RunPod
 EXPOSE 8188
-CMD ["/bin/bash", "-c", "source /workspace/venv/bin/activate && /workspace/scripts/check_gpu.py && /workspace/scripts/start_comfyui.sh"]
+CMD ["/bin/bash", "-c", "/workspace/scripts/start.sh"]
+
+
 
 
 
