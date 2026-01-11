@@ -95,6 +95,7 @@ RUN git clone https://github.com/VAST-AI-Research/UniRig.git ${WORKSPACE}/unirig
 
 # Patch UniRig requirements to remove bpy (Linux cannot install bpy via pip)
 RUN sed -i '/bpy/d' ${WORKSPACE}/unirig/requirements.txt
+RUN sed -i '/flash_attn/d' ${WORKSPACE}/unirig/requirements.txt
 
 # Install UniRig dependencies
 RUN pip install --no-cache-dir -r ${WORKSPACE}/unirig/requirements.txt
@@ -168,4 +169,5 @@ RUN echo '#!/usr/bin/env bash\n' \
 # Default command: start ComfyUI; you can change this or override in RunPod
 EXPOSE 8188
 CMD ["/bin/bash", "-c", "source /workspace/venv/bin/activate && /workspace/scripts/check_gpu.py && /workspace/scripts/start_comfyui.sh"]
+
 
