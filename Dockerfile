@@ -90,25 +90,23 @@ RUN mkdir -p /opt && \
     ln -s /opt/blender-${BLENDER_VERSION}-linux-x64/blender /usr/local/bin/blender
 
 # -----------------------------
-# 4. ComfyUI
-# Clone and install ComfyUI as the non-root `app` user so files are owned by it.
+# 4. ComfyUI (installed OUTSIDE /workspace)
 # -----------------------------
 USER app
-RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${WORKSPACE}/comfyui
+RUN git clone https://github.com/comfyanonymous/ComfyUI.git /opt/comfyui
 
-RUN mkdir -p ${WORKSPACE}/comfyui/custom_nodes && \
-    cd ${WORKSPACE}/comfyui/custom_nodes && \
+RUN mkdir -p /opt/comfyui/custom_nodes && \
+    cd /opt/comfyui/custom_nodes && \
     git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone https://github.com/cubiq/ComfyUI_essentials.git && \
     git clone https://github.com/WASasquatch/was-node-suite-comfyui.git
 
-# Install ComfyUI requirements as root so the venv can be written into,
-# then restore ownership of the ComfyUI workspace to `app`.
 USER root
-RUN cd ${WORKSPACE}/comfyui && \
+RUN cd /opt/comfyui && \
     ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r requirements.txt && \
-    chown -R app:app ${WORKSPACE}/comfyui || true
+    chown -R app:app /opt/comfyui
 USER app
+
 
 RUN mkdir -p ${WORKSPACE}/models/checkpoints \
              ${WORKSPACE}/models/loras \
@@ -171,50 +169,22 @@ RUN mkdir -p \
     ${WORKSPACE}/scripts
 
 # -----------------------------
-# 10. Startup script (foreground ComfyUI)
-# Place the start script outside /workspace so a host/volume mount on /workspace
-# doesn't hide/remove it at container runtime (Runpod commonly mounts /workspace).
+# 10. Startup script (always runs baked-in ComfyUI)
 # -----------------------------
 USER root
 RUN mkdir -p /usr/local/bin && \
     echo '#!/usr/bin/env bash'                                   >  /usr/local/bin/start.sh && \
     echo 'set -e'                                               >> /usr/local/bin/start.sh && \
     echo 'source "${VIRTUAL_ENV}/bin/activate"'                >> /usr/local/bin/start.sh && \
-    echo 'if [ "${MODEL_DOWNLOAD_ON_START:-0}" = "1" ]; then' >> /usr/local/bin/start.sh && \
-    echo '  echo "MODEL_DOWNLOAD_ON_START=1: downloading configured model URLs"' >> /usr/local/bin/start.sh && \
-    echo '  if [ -n "${MODEL_URLS}" ]; then'                     >> /usr/local/bin/start.sh && \
-    echo '    echo "MODEL_URLS: ${MODEL_URLS}"'                  >> /usr/local/bin/start.sh && \
-    echo '    echo "${MODEL_URLS}" | tr "," "\n" | while read url; do' >> /usr/local/bin/start.sh && \
-    echo '      url="$(echo "$url" | xargs)"'                 >> /usr/local/bin/start.sh && \
-    echo '      if [ -n "$url" ]; then'                         >> /usr/local/bin/start.sh && \
-    echo '        fname=$(basename "$url")'                    >> /usr/local/bin/start.sh && \
-    echo '        mkdir -p /workspace/models/3d'                 >> /usr/local/bin/start.sh && \
-    echo '        curl -L --retry 3 -o "/workspace/models/3d/$fname" "$url" || echo "download failed: $url"' >> /usr/local/bin/start.sh && \
-    echo '      fi'                                               >> /usr/local/bin/start.sh && \
-    echo '    done'                                              >> /usr/local/bin/start.sh && \
-    echo '  fi'                                                 >> /usr/local/bin/start.sh && \
-    echo 'fi'                                                   >> /usr/local/bin/start.sh && \
-    echo ''                                                    >> /usr/local/bin/start.sh && \
-    echo 'for repo in comfyui unirig triposr hy-motion; do'      >> /usr/local/bin/start.sh && \
-    echo '  if [ -d "/workspace/$repo/.git" ]; then'           >> /usr/local/bin/start.sh && \
-    echo '    echo "Running git lfs pull in /workspace/$repo"'  >> /usr/local/bin/start.sh && \
-    echo '    git -C "/workspace/$repo" lfs pull || true'      >> /usr/local/bin/start.sh && \
-    echo '  fi'                                                 >> /usr/local/bin/start.sh && \
-    echo 'done'                                                >> /usr/local/bin/start.sh && \
-    echo ''                                                    >> /usr/local/bin/start.sh && \
     echo 'python - <<EOF'                                       >> /usr/local/bin/start.sh && \
     echo 'import torch'                                         >> /usr/local/bin/start.sh && \
     echo 'print("CUDA available:", torch.cuda.is_available())'  >> /usr/local/bin/start.sh && \
     echo 'print("Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> /usr/local/bin/start.sh && \
     echo 'EOF'                                                  >> /usr/local/bin/start.sh && \
-    echo 'if [ -d "/workspace/comfyui" ]; then'                >> /usr/local/bin/start.sh && \
-    echo '  cd "/workspace/comfyui"'                            >> /usr/local/bin/start.sh && \
-    echo '  exec python main.py --listen 0.0.0.0 --port "${PORT:-8188}"' >> /usr/local/bin/start.sh && \
-    echo 'else'                                                 >> /usr/local/bin/start.sh && \
-    echo '  echo "No /workspace/comfyui present; mount your ComfyUI repo to /workspace/comfyui"' >> /usr/local/bin/start.sh && \
-    echo '  tail -f /dev/null'                                   >> /usr/local/bin/start.sh && \
-    echo 'fi'                                                   >> /usr/local/bin/start.sh && \
+    echo 'cd /opt/comfyui'                                      >> /usr/local/bin/start.sh && \
+    echo 'exec python main.py --listen 0.0.0.0 --port "${PORT:-8188}"' >> /usr/local/bin/start.sh && \
     chmod +x /usr/local/bin/start.sh
+
 
 EXPOSE 8188
 
