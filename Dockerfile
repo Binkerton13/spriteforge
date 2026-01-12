@@ -74,7 +74,7 @@ RUN pip install --no-cache-dir \
     numpy scipy pillow opencv-python \
     matplotlib scikit-image scikit-learn \
     trimesh pygltflib \
-    transformers>=4.35.0 huggingface_hub
+    transformers>=4.40.0 huggingface_hub
 
 
 # -----------------------------
@@ -92,18 +92,20 @@ RUN mkdir -p /opt && \
 # -----------------------------
 # 4. ComfyUI (installed OUTSIDE /workspace)
 # -----------------------------
-USER app
-RUN git clone https://github.com/comfyanonymous/ComfyUI.git /opt/comfyui
+USER root
+RUN git clone https://github.com/comfyanonymous/ComfyUI.git /opt/comfyui && \
+    chown -R app:app /opt/comfyui
 
+USER app
 RUN mkdir -p /opt/comfyui/custom_nodes && \
     cd /opt/comfyui/custom_nodes && \
     git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone https://github.com/cubiq/ComfyUI_essentials.git && \
     git clone https://github.com/WASasquatch/was-node-suite-comfyui.git
 
+
 USER root
-RUN cd /opt/comfyui && \
-    ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r requirements.txt && \
+RUN ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r /opt/comfyui/requirements.txt && \
     chown -R app:app /opt/comfyui
 USER app
 
