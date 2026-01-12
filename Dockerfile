@@ -128,10 +128,15 @@ RUN mkdir -p \
 # -----------------------------
 # 10. Startup script (foreground ComfyUI)
 # -----------------------------
-RUN echo '#!/usr/bin/env bash'                                   >  /workspace/scripts/start.sh && \
+RUN mkdir -p /workspace/scripts && \
+    echo '#!/usr/bin/env bash'                                   >  /workspace/scripts/start.sh && \
     echo 'set -e'                                               >> /workspace/scripts/start.sh && \
     echo 'source "/workspace/venv/bin/activate"'                >> /workspace/scripts/start.sh && \
-    echo 'echo "CUDA available: $(python - <<EOF\nimport torch; print(torch.cuda.is_available())\nEOF)"' >> /workspace/scripts/start.sh && \
+    echo 'python - <<EOF'                                       >> /workspace/scripts/start.sh && \
+    echo 'import torch'                                         >> /workspace/scripts/start.sh && \
+    echo 'print("CUDA available:", torch.cuda.is_available())'  >> /workspace/scripts/start.sh && \
+    echo 'print("Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> /workspace/scripts/start.sh && \
+    echo 'EOF'                                                  >> /workspace/scripts/start.sh && \
     echo 'cd "/workspace/comfyui"'                              >> /workspace/scripts/start.sh && \
     echo 'python main.py --listen 0.0.0.0 --port 8188'          >> /workspace/scripts/start.sh && \
     chmod +x /workspace/scripts/start.sh
