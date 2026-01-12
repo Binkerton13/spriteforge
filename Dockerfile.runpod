@@ -1,0 +1,103 @@
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+# Build-time flag: set to 0 for CPU-only test builds (local machines w/o NVIDIA)
+ARG USE_CUDA=1
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC \
+    WORKSPACE=/workspace \
+    PORT=8188 \
+    MODEL_DOWNLOAD_ON_START=0 \
+    MODEL_URLS=""
+
+# Minimal runtime packages — avoid build tools to keep image small and fast to build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git git-lfs \
+    curl ca-certificates \
+    ffmpeg \
+    python3 python3-venv python3-pip \
+    unzip \
+    libgl1 libglib2.0-0 libxrender1 libxext6 libsm6 \
+    libx11-6 libxi6 libxrandr2 libxxf86vm1 libxfixes3 libxcursor1 libxinerama1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git lfs install --system || true
+
+RUN mkdir -p ${WORKSPACE}
+WORKDIR ${WORKSPACE}
+
+# Create Python venv and install runtime Python deps (torch install varies by USE_CUDA)
+RUN python3 -m venv ${WORKSPACE}/venv && \
+    ${WORKSPACE}/venv/bin/pip install --upgrade pip wheel setuptools
+
+ENV VIRTUAL_ENV=${WORKSPACE}/venv
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+RUN if [ "${USE_CUDA}" = "1" ]; then \
+        pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
+    else \
+        pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu; \
+    fi
+
+RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib
+
+# Create workspace scaffold (empty) — expect repos/models to be mounted at runtime
+RUN mkdir -p ${WORKSPACE}/models/checkpoints \
+             ${WORKSPACE}/models/loras \
+             ${WORKSPACE}/models/vae \
+             ${WORKSPACE}/models/controlnet \
+             ${WORKSPACE}/models/unet \
+             ${WORKSPACE}/models/3d \
+             ${WORKSPACE}/models/textures \
+             ${WORKSPACE}/models/rigged \
+             ${WORKSPACE}/renders \
+             ${WORKSPACE}/animations \
+             ${WORKSPACE}/scripts
+
+# Add a lightweight start script that will run `git lfs pull` in any cloned repos
+RUN printf '%s\n' "#!/usr/bin/env bash" \
+    "set -e" \
+    "source \"/workspace/venv/bin/activate\"" \
+    "if [ \"\${MODEL_DOWNLOAD_ON_START:-0}\" = \"1\" ]; then" \
+    "  echo \"MODEL_DOWNLOAD_ON_START=1: downloading configured model URLs\"" \
+    "  if [ -n \"\${MODEL_URLS}\" ]; then" \
+    "    echo \"\${MODEL_URLS}\" | tr \",\" '\\n' | while read url; do" \
+    "      url=\"\$(echo \"\$url\" | xargs)\"" \
+    "      if [ -n \"\$url\" ]; then" \
+    "        fname=\"\$(basename \"\$url\")\"" \
+    "        mkdir -p /workspace/models/3d" \
+    "        curl -L --retry 3 -o \"/workspace/models/3d/\$fname\" \"\$url\" || echo \"download failed: \$url\"" \
+    "      fi" \
+    "    done" \
+    "  fi" \
+    "fi" \
+    "for repo in comfyui unirig triposr hy-motion; do" \
+    "  if [ -d \"/workspace/$repo/.git\" ]; then" \
+    "    echo \"Running git lfs pull in /workspace/$repo\"" \
+    "    git -C \"/workspace/$repo\" lfs pull || true" \
+    "  fi" \
+    "done" \
+    "python - <<EOF" \
+    "import torch" \
+    "print(\"CUDA available:\", torch.cuda.is_available())" \
+    "print(\"Device:\", torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"None\")" \
+    "EOF" \
+    "if [ -d \"/workspace/comfyui\" ]; then" \
+    "  cd \"/workspace/comfyui\"" \
+    "  exec python main.py --listen 0.0.0.0 --port \"\${PORT:-8188}\"" \
+    "else" \
+    "  echo \"No /workspace/comfyui present; mount your ComfyUI repo to /workspace/comfyui\"" \
+    "  tail -f /dev/null" \
+    "fi" \
+    > /workspace/scripts/start.sh && chmod +x /workspace/scripts/start.sh
+
+# Create a non-root user and own the workspace
+RUN groupadd -r app || true && useradd -r -m -g app app || true && chown -R app:app ${WORKSPACE}
+USER app
+
+EXPOSE 8188
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:${PORT:-8188}/ || exit 1
+
+CMD ["/bin/bash", "/workspace/scripts/start.sh"]

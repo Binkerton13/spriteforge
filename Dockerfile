@@ -4,6 +4,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC \
     WORKSPACE=/workspace
 
+# Build-time flag to control whether CUDA-enabled PyTorch is installed.
+# Set to 0 for CPU-only builds (useful for local testing without an NVIDIA GPU).
+ARG USE_CUDA=1
+
 # -----------------------------
 # 1. Base system setup
 # -----------------------------
@@ -25,6 +29,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libavcodec-dev libavformat-dev libavutil-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Ensure git-lfs is initialized so LFS-tracked models can be pulled at runtime/build
+RUN git lfs install --system || true
+
 RUN mkdir -p ${WORKSPACE}
 WORKDIR ${WORKSPACE}
 
@@ -37,11 +44,22 @@ RUN python3 -m venv ${WORKSPACE}/venv && \
 ENV VIRTUAL_ENV=${WORKSPACE}/venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
+# Allow Runpod (or other platforms) to override the service port
+ENV PORT=8188
+ENV MODEL_DOWNLOAD_ON_START=0
+# Comma-separated list of URLs to download into /workspace/models/3d when MODEL_DOWNLOAD_ON_START=1
+ENV MODEL_URLS=""
+
 # -----------------------------
 # 3. PyTorch (CUDA 12.1)
 # -----------------------------
-RUN pip install --no-cache-dir \
-    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+RUN if [ "${USE_CUDA}" = "1" ]; then \
+        pip install --no-cache-dir \
+            torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
+    else \
+        pip install --no-cache-dir \
+            torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu; \
+    fi
 
 # Core Python deps
 RUN pip install --no-cache-dir \
@@ -132,19 +150,49 @@ RUN mkdir -p /workspace/scripts && \
     echo '#!/usr/bin/env bash'                                   >  /workspace/scripts/start.sh && \
     echo 'set -e'                                               >> /workspace/scripts/start.sh && \
     echo 'source "/workspace/venv/bin/activate"'                >> /workspace/scripts/start.sh && \
+    echo 'if [ "${MODEL_DOWNLOAD_ON_START:-0}" = "1" ]; then' >> /workspace/scripts/start.sh && \
+    echo '  echo "MODEL_DOWNLOAD_ON_START=1: downloading configured model URLs"' >> /workspace/scripts/start.sh && \
+    echo '  if [ -n "${MODEL_URLS}" ]; then'                     >> /workspace/scripts/start.sh && \
+    echo '    echo "MODEL_URLS: ${MODEL_URLS}"'                  >> /workspace/scripts/start.sh && \
+    echo '    echo "${MODEL_URLS}" | tr "," "\n" | while read url; do' >> /workspace/scripts/start.sh && \
+    echo '      url="$(echo "$url" | xargs)"'                 >> /workspace/scripts/start.sh && \
+    echo '      if [ -n "$url" ]; then'                         >> /workspace/scripts/start.sh && \
+    echo '        fname=$(basename "$url")'                    >> /workspace/scripts/start.sh && \
+    echo '        mkdir -p /workspace/models/3d'                 >> /workspace/scripts/start.sh && \
+    echo '        curl -L --retry 3 -o "/workspace/models/3d/$fname" "$url" || echo "download failed: $url"' >> /workspace/scripts/start.sh && \
+    echo '      fi'                                               >> /workspace/scripts/start.sh && \
+    echo '    done'                                              >> /workspace/scripts/start.sh && \
+    echo '  fi'                                                 >> /workspace/scripts/start.sh && \
+    echo 'fi'                                                   >> /workspace/scripts/start.sh && \
+    echo ''                                                    >> /workspace/scripts/start.sh && \
+    echo 'for repo in comfyui unirig triposr hy-motion; do'      >> /workspace/scripts/start.sh && \
+    echo '  if [ -d "/workspace/$repo/.git" ]; then'           >> /workspace/scripts/start.sh && \
+    echo '    echo "Running git lfs pull in /workspace/$repo"'  >> /workspace/scripts/start.sh && \
+    echo '    git -C "/workspace/$repo" lfs pull || true'      >> /workspace/scripts/start.sh && \
+    echo '  fi'                                                 >> /workspace/scripts/start.sh && \
+    echo 'done'                                                >> /workspace/scripts/start.sh && \
+    echo ''                                                    >> /workspace/scripts/start.sh && \
     echo 'python - <<EOF'                                       >> /workspace/scripts/start.sh && \
     echo 'import torch'                                         >> /workspace/scripts/start.sh && \
     echo 'print("CUDA available:", torch.cuda.is_available())'  >> /workspace/scripts/start.sh && \
     echo 'print("Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> /workspace/scripts/start.sh && \
     echo 'EOF'                                                  >> /workspace/scripts/start.sh && \
     echo 'cd "/workspace/comfyui"'                              >> /workspace/scripts/start.sh && \
-    echo 'python main.py --listen 0.0.0.0 --port 8188'          >> /workspace/scripts/start.sh && \
+    echo 'exec python main.py --listen 0.0.0.0 --port "${PORT:-8188}"'          >> /workspace/scripts/start.sh && \
     chmod +x /workspace/scripts/start.sh
 
 EXPOSE 8188
+
+# Simple healthcheck that verifies the web server responds on the configured port
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:${PORT:-8188}/ || exit 1
 
 # -----------------------------
 # 11. Runpod-compatible CMD
 # -----------------------------
 CMD ["/bin/bash", "/workspace/scripts/start.sh"]
+
+# Create a non-root user and give ownership of the workspace directories
+RUN groupadd -r app || true && useradd -r -m -g app app || true && chown -R app:app ${WORKSPACE}
+USER app
 
