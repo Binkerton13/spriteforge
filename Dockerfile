@@ -1,12 +1,12 @@
-FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 
-# -----------------------------
-# 1. Base system setup
-# -----------------------------
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC \
     WORKSPACE=/workspace
 
+# -----------------------------
+# 1. Base system setup
+# -----------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git git-lfs \
     wget curl \
@@ -38,13 +38,12 @@ ENV VIRTUAL_ENV=${WORKSPACE}/venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 # -----------------------------
-# 3. Install PyTorch (CUDA 12.x build)
-#    Adjust index URL if needed.
+# 3. PyTorch (CUDA 12.1)
 # -----------------------------
 RUN pip install --no-cache-dir \
     torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
-# Core Python deps shared by tools
+# Core Python deps
 RUN pip install --no-cache-dir \
     numpy scipy pillow opencv-python \
     matplotlib scikit-image scikit-learn \
@@ -55,20 +54,15 @@ RUN pip install --no-cache-dir \
 # -----------------------------
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${WORKSPACE}/comfyui
 
-# Optional: ComfyUI Manager and common node packs
-# (You can comment out ones you don't want)
-
 RUN mkdir -p ${WORKSPACE}/comfyui/custom_nodes && \
     cd ${WORKSPACE}/comfyui/custom_nodes && \
     git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone https://github.com/cubiq/ComfyUI_essentials.git && \
-    git clone https://github.com/WASasquatch/was-node-suite-comfyui.git || true
+    git clone https://github.com/WASasquatch/was-node-suite-comfyui.git
 
-# Install ComfyUI Python dependencies
 RUN cd ${WORKSPACE}/comfyui && \
-    pip install --no-cache-dir -r requirements.txt || true
+    pip install --no-cache-dir -r requirements.txt
 
-# Models directory layout (mounted via persistent volume in practice)
 RUN mkdir -p ${WORKSPACE}/models/checkpoints \
              ${WORKSPACE}/models/loras \
              ${WORKSPACE}/models/vae \
@@ -76,9 +70,8 @@ RUN mkdir -p ${WORKSPACE}/models/checkpoints \
              ${WORKSPACE}/models/unet
 
 # -----------------------------
-# 5. Blender (headless)
+# 5. Blender (CLI + headless)
 # -----------------------------
-# Adjust version as desired (e.g., 4.0.2)
 ARG BLENDER_VERSION=4.0.2
 RUN mkdir -p /opt && \
     cd /opt && \
@@ -88,22 +81,18 @@ RUN mkdir -p /opt && \
     ln -s /opt/blender-${BLENDER_VERSION}-linux-x64/blender /usr/local/bin/blender
 
 # -----------------------------
-# 6. UniRig (auto-rigging)
+# 6. UniRig
 # -----------------------------
-# Replace URL with the actual UniRig repo
 RUN git clone https://github.com/VAST-AI-Research/UniRig.git ${WORKSPACE}/unirig
 
-# Patch UniRig requirements to remove bpy (Linux cannot install bpy via pip)
 RUN sed -i '/bpy/d' ${WORKSPACE}/unirig/requirements.txt
 RUN sed -i '/flash_attn/d' ${WORKSPACE}/unirig/requirements.txt
 
-# Install UniRig dependencies
 RUN pip install --no-cache-dir -r ${WORKSPACE}/unirig/requirements.txt
 
 # -----------------------------
-# 7. Hy-Motion (3D motion model)
+# 7. Hy-Motion
 # -----------------------------
-# Replace URL with the actual Hy-Motion repo
 RUN git clone https://github.com/Tencent-Hunyuan/HY-Motion-1.0.git ${WORKSPACE}/hy-motion
 
 RUN if [ -f "${WORKSPACE}/hy-motion/requirements.txt" ]; then \
@@ -111,24 +100,15 @@ RUN if [ -f "${WORKSPACE}/hy-motion/requirements.txt" ]; then \
     fi
 
 # -----------------------------
-# 8. TripoSR (3D generation)
+# 8. TripoSR
 # -----------------------------
 RUN git clone https://github.com/VAST-AI-Research/TripoSR.git ${WORKSPACE}/triposr
 
-# Remove CUDA-heavy optional dependency that requires full CUDA toolkit
 RUN sed -i '/torchmcubes/d' ${WORKSPACE}/triposr/requirements.txt
 
-# Install TripoSR dependencies
 RUN if [ -f "${WORKSPACE}/triposr/requirements.txt" ]; then \
         pip install --no-cache-dir -r ${WORKSPACE}/triposr/requirements.txt; \
     fi
-
-# Option B (commented out): own venv for hard isolation
-# RUN python3 -m venv ${WORKSPACE}/triposr/venv && \
-#     ${WORKSPACE}/triposr/venv/bin/pip install --upgrade pip && \
-#     if [ -f "${WORKSPACE}/triposr/requirements.txt" ]; then \
-#         ${WORKSPACE}/triposr/venv/bin/pip install --no-cache-dir -r ${WORKSPACE}/triposr/requirements.txt; \
-#     fi
 
 RUN mkdir -p ${WORKSPACE}/triposr/models \
              ${WORKSPACE}/triposr/outputs \
@@ -146,34 +126,20 @@ RUN mkdir -p \
     ${WORKSPACE}/scripts
 
 # -----------------------------
-# 10. Helper / startup scripts
+# 10. Startup script (foreground ComfyUI)
 # -----------------------------
-# Unified startup script
-RUN mkdir -p /workspace/scripts && \
-    echo '#!/usr/bin/env bash'                                   >  /workspace/scripts/start.sh && \
+RUN echo '#!/usr/bin/env bash'                                   >  /workspace/scripts/start.sh && \
     echo 'set -e'                                               >> /workspace/scripts/start.sh && \
-    echo 'echo "[start.sh] Activating virtual environment..."'  >> /workspace/scripts/start.sh && \
     echo 'source "/workspace/venv/bin/activate"'                >> /workspace/scripts/start.sh && \
-    echo ''                                                     >> /workspace/scripts/start.sh && \
-    echo 'echo "[start.sh] GPU info:"'                          >> /workspace/scripts/start.sh && \
-    echo 'python - <<EOF'                                       >> /workspace/scripts/start.sh && \
-    echo 'import torch'                                         >> /workspace/scripts/start.sh && \
-    echo 'print("  CUDA available:", torch.cuda.is_available())'>> /workspace/scripts/start.sh && \
-    echo 'print("  Device count:", torch.cuda.device_count())'  >> /workspace/scripts/start.sh && \
-    echo 'print("  Device name:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> /workspace/scripts/start.sh && \
-    echo 'EOF'                                                  >> /workspace/scripts/start.sh && \
-    echo ''                                                     >> /workspace/scripts/start.sh && \
-    echo 'echo "[start.sh] Starting ComfyUI on 0.0.0.0:8188..."'>> /workspace/scripts/start.sh && \
+    echo 'echo "CUDA available: $(python - <<EOF\nimport torch; print(torch.cuda.is_available())\nEOF)"' >> /workspace/scripts/start.sh && \
     echo 'cd "/workspace/comfyui"'                              >> /workspace/scripts/start.sh && \
     echo 'python main.py --listen 0.0.0.0 --port 8188'          >> /workspace/scripts/start.sh && \
     chmod +x /workspace/scripts/start.sh
 
-# Default command: start ComfyUI; you can change this or override in RunPod
 EXPOSE 8188
-CMD ["/bin/bash", "-c", "/workspace/scripts/start.sh"]
 
-
-
-
-
+# -----------------------------
+# 11. Runpod-compatible CMD
+# -----------------------------
+CMD ["/bin/bash", "/workspace/scripts/start.sh"]
 
