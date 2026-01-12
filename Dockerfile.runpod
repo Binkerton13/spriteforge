@@ -27,11 +27,16 @@ RUN mkdir -p ${WORKSPACE}
 WORKDIR ${WORKSPACE}
 
 # Create Python venv and install runtime Python deps (torch install varies by USE_CUDA)
-RUN python3 -m venv ${WORKSPACE}/venv && \
-    ${WORKSPACE}/venv/bin/pip install --upgrade pip wheel setuptools
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --upgrade pip wheel setuptools
 
-ENV VIRTUAL_ENV=${WORKSPACE}/venv
+ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+# Create non-root user early and make venv/workspace writable by it
+RUN groupadd -r app || true && useradd -r -m -g app app || true
+RUN chown -R app:app ${VIRTUAL_ENV} ${WORKSPACE} || true
+
 
 RUN if [ "${USE_CUDA}" = "1" ]; then \
         pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
@@ -39,6 +44,7 @@ RUN if [ "${USE_CUDA}" = "1" ]; then \
         pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu; \
     fi
 
+USER app
 RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib
 RUN pip install --no-cache-dir transformers>=4.35.0 huggingface_hub
 
@@ -60,7 +66,7 @@ RUN mkdir -p ${WORKSPACE}/models/checkpoints \
 # hide or remove it at runtime.
 RUN printf '%s\n' "#!/usr/bin/env bash" \
     "set -e" \
-    "source \"/workspace/venv/bin/activate\"" \
+    "source \"${VIRTUAL_ENV}/bin/activate\"" \
     "if [ \"\${MODEL_DOWNLOAD_ON_START:-0}\" = \"1\" ]; then" \
     "  echo \"MODEL_DOWNLOAD_ON_START=1: downloading configured model URLs\"" \
     "  if [ -n \"\${MODEL_URLS}\" ]; then" \
@@ -94,8 +100,6 @@ RUN printf '%s\n' "#!/usr/bin/env bash" \
     "fi" \
     > /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
-# Create a non-root user and own the workspace
-RUN groupadd -r app || true && useradd -r -m -g app app || true && chown -R app:app ${WORKSPACE}
 USER app
 
 EXPOSE 8188
