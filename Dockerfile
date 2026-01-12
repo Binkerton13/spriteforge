@@ -145,41 +145,48 @@ RUN mkdir -p \
 
 # -----------------------------
 # 10. Startup script (foreground ComfyUI)
+# Place the start script outside /workspace so a host/volume mount on /workspace
+# doesn't hide/remove it at container runtime (Runpod commonly mounts /workspace).
 # -----------------------------
-RUN mkdir -p /workspace/scripts && \
-    echo '#!/usr/bin/env bash'                                   >  /workspace/scripts/start.sh && \
-    echo 'set -e'                                               >> /workspace/scripts/start.sh && \
-    echo 'source "/workspace/venv/bin/activate"'                >> /workspace/scripts/start.sh && \
-    echo 'if [ "${MODEL_DOWNLOAD_ON_START:-0}" = "1" ]; then' >> /workspace/scripts/start.sh && \
-    echo '  echo "MODEL_DOWNLOAD_ON_START=1: downloading configured model URLs"' >> /workspace/scripts/start.sh && \
-    echo '  if [ -n "${MODEL_URLS}" ]; then'                     >> /workspace/scripts/start.sh && \
-    echo '    echo "MODEL_URLS: ${MODEL_URLS}"'                  >> /workspace/scripts/start.sh && \
-    echo '    echo "${MODEL_URLS}" | tr "," "\n" | while read url; do' >> /workspace/scripts/start.sh && \
-    echo '      url="$(echo "$url" | xargs)"'                 >> /workspace/scripts/start.sh && \
-    echo '      if [ -n "$url" ]; then'                         >> /workspace/scripts/start.sh && \
-    echo '        fname=$(basename "$url")'                    >> /workspace/scripts/start.sh && \
-    echo '        mkdir -p /workspace/models/3d'                 >> /workspace/scripts/start.sh && \
-    echo '        curl -L --retry 3 -o "/workspace/models/3d/$fname" "$url" || echo "download failed: $url"' >> /workspace/scripts/start.sh && \
-    echo '      fi'                                               >> /workspace/scripts/start.sh && \
-    echo '    done'                                              >> /workspace/scripts/start.sh && \
-    echo '  fi'                                                 >> /workspace/scripts/start.sh && \
-    echo 'fi'                                                   >> /workspace/scripts/start.sh && \
-    echo ''                                                    >> /workspace/scripts/start.sh && \
-    echo 'for repo in comfyui unirig triposr hy-motion; do'      >> /workspace/scripts/start.sh && \
-    echo '  if [ -d "/workspace/$repo/.git" ]; then'           >> /workspace/scripts/start.sh && \
-    echo '    echo "Running git lfs pull in /workspace/$repo"'  >> /workspace/scripts/start.sh && \
-    echo '    git -C "/workspace/$repo" lfs pull || true'      >> /workspace/scripts/start.sh && \
-    echo '  fi'                                                 >> /workspace/scripts/start.sh && \
-    echo 'done'                                                >> /workspace/scripts/start.sh && \
-    echo ''                                                    >> /workspace/scripts/start.sh && \
-    echo 'python - <<EOF'                                       >> /workspace/scripts/start.sh && \
-    echo 'import torch'                                         >> /workspace/scripts/start.sh && \
-    echo 'print("CUDA available:", torch.cuda.is_available())'  >> /workspace/scripts/start.sh && \
-    echo 'print("Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> /workspace/scripts/start.sh && \
-    echo 'EOF'                                                  >> /workspace/scripts/start.sh && \
-    echo 'cd "/workspace/comfyui"'                              >> /workspace/scripts/start.sh && \
-    echo 'exec python main.py --listen 0.0.0.0 --port "${PORT:-8188}"'          >> /workspace/scripts/start.sh && \
-    chmod +x /workspace/scripts/start.sh
+RUN mkdir -p /usr/local/bin && \
+    echo '#!/usr/bin/env bash'                                   >  /usr/local/bin/start.sh && \
+    echo 'set -e'                                               >> /usr/local/bin/start.sh && \
+    echo 'source "/workspace/venv/bin/activate"'                >> /usr/local/bin/start.sh && \
+    echo 'if [ "${MODEL_DOWNLOAD_ON_START:-0}" = "1" ]; then' >> /usr/local/bin/start.sh && \
+    echo '  echo "MODEL_DOWNLOAD_ON_START=1: downloading configured model URLs"' >> /usr/local/bin/start.sh && \
+    echo '  if [ -n "${MODEL_URLS}" ]; then'                     >> /usr/local/bin/start.sh && \
+    echo '    echo "MODEL_URLS: ${MODEL_URLS}"'                  >> /usr/local/bin/start.sh && \
+    echo '    echo "${MODEL_URLS}" | tr "," "\n" | while read url; do' >> /usr/local/bin/start.sh && \
+    echo '      url="$(echo "$url" | xargs)"'                 >> /usr/local/bin/start.sh && \
+    echo '      if [ -n "$url" ]; then'                         >> /usr/local/bin/start.sh && \
+    echo '        fname=$(basename "$url")'                    >> /usr/local/bin/start.sh && \
+    echo '        mkdir -p /workspace/models/3d'                 >> /usr/local/bin/start.sh && \
+    echo '        curl -L --retry 3 -o "/workspace/models/3d/$fname" "$url" || echo "download failed: $url"' >> /usr/local/bin/start.sh && \
+    echo '      fi'                                               >> /usr/local/bin/start.sh && \
+    echo '    done'                                              >> /usr/local/bin/start.sh && \
+    echo '  fi'                                                 >> /usr/local/bin/start.sh && \
+    echo 'fi'                                                   >> /usr/local/bin/start.sh && \
+    echo ''                                                    >> /usr/local/bin/start.sh && \
+    echo 'for repo in comfyui unirig triposr hy-motion; do'      >> /usr/local/bin/start.sh && \
+    echo '  if [ -d "/workspace/$repo/.git" ]; then'           >> /usr/local/bin/start.sh && \
+    echo '    echo "Running git lfs pull in /workspace/$repo"'  >> /usr/local/bin/start.sh && \
+    echo '    git -C "/workspace/$repo" lfs pull || true'      >> /usr/local/bin/start.sh && \
+    echo '  fi'                                                 >> /usr/local/bin/start.sh && \
+    echo 'done'                                                >> /usr/local/bin/start.sh && \
+    echo ''                                                    >> /usr/local/bin/start.sh && \
+    echo 'python - <<EOF'                                       >> /usr/local/bin/start.sh && \
+    echo 'import torch'                                         >> /usr/local/bin/start.sh && \
+    echo 'print("CUDA available:", torch.cuda.is_available())'  >> /usr/local/bin/start.sh && \
+    echo 'print("Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> /usr/local/bin/start.sh && \
+    echo 'EOF'                                                  >> /usr/local/bin/start.sh && \
+    echo 'if [ -d "/workspace/comfyui" ]; then'                >> /usr/local/bin/start.sh && \
+    echo '  cd "/workspace/comfyui"'                            >> /usr/local/bin/start.sh && \
+    echo '  exec python main.py --listen 0.0.0.0 --port "${PORT:-8188}"' >> /usr/local/bin/start.sh && \
+    echo 'else'                                                 >> /usr/local/bin/start.sh && \
+    echo '  echo "No /workspace/comfyui present; mount your ComfyUI repo to /workspace/comfyui"' >> /usr/local/bin/start.sh && \
+    echo '  tail -f /dev/null'                                   >> /usr/local/bin/start.sh && \
+    echo 'fi'                                                   >> /usr/local/bin/start.sh && \
+    chmod +x /usr/local/bin/start.sh
 
 EXPOSE 8188
 
@@ -190,7 +197,8 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
 # -----------------------------
 # 11. Runpod-compatible CMD
 # -----------------------------
-CMD ["/bin/bash", "/workspace/scripts/start.sh"]
+# Use start script outside of /workspace so mounts don't hide it
+CMD ["/bin/bash", "/usr/local/bin/start.sh"]
 
 # Create a non-root user and give ownership of the workspace directories
 RUN groupadd -r app || true && useradd -r -m -g app app || true && chown -R app:app ${WORKSPACE}

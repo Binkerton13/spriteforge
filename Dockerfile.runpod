@@ -55,6 +55,8 @@ RUN mkdir -p ${WORKSPACE}/models/checkpoints \
              ${WORKSPACE}/scripts
 
 # Add a lightweight start script that will run `git lfs pull` in any cloned repos
+# Place the start script in /usr/local/bin so a host mount of /workspace doesn't
+# hide or remove it at runtime.
 RUN printf '%s\n' "#!/usr/bin/env bash" \
     "set -e" \
     "source \"/workspace/venv/bin/activate\"" \
@@ -89,7 +91,7 @@ RUN printf '%s\n' "#!/usr/bin/env bash" \
     "  echo \"No /workspace/comfyui present; mount your ComfyUI repo to /workspace/comfyui\"" \
     "  tail -f /dev/null" \
     "fi" \
-    > /workspace/scripts/start.sh && chmod +x /workspace/scripts/start.sh
+    > /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
 # Create a non-root user and own the workspace
 RUN groupadd -r app || true && useradd -r -m -g app app || true && chown -R app:app ${WORKSPACE}
@@ -100,4 +102,4 @@ EXPOSE 8188
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://127.0.0.1:${PORT:-8188}/ || exit 1
 
-CMD ["/bin/bash", "/workspace/scripts/start.sh"]
+CMD ["/bin/bash", "/usr/local/bin/start.sh"]
