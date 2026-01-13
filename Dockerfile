@@ -74,7 +74,8 @@ RUN pip install --no-cache-dir \
     numpy scipy pillow opencv-python \
     matplotlib scikit-image scikit-learn \
     trimesh pygltflib \
-    transformers>=4.40.0 huggingface_hub
+    huggingface_hub && \
+    pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
 
 # -----------------------------
@@ -198,7 +199,13 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
 # package installs from within the container by the non-root user work.
 # Keep this focused to the venv and app workdirs to avoid duplicating
 # large unrelated filesystem layers.
+USER root
+# Re-install/upgrade transformers from source after all requirements installs
+# (some requirements.txt files may pin an older transformers; force the
+# latest from the GitHub repo so Qwen2Tokenizer is available).
+RUN ${VIRTUAL_ENV}/bin/pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git || true
 RUN chown -R app:app ${VIRTUAL_ENV} || true
+USER app
 
 # -----------------------------
 # 11. Runpod-compatible CMD

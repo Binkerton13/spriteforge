@@ -10,12 +10,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     MODEL_DOWNLOAD_ON_START=0 \
     MODEL_URLS=""
 
-# Minimal runtime packages — avoid build tools to keep image small and fast to build
+# Minimal runtime packages. Include build tools so we can install latest transformers from source.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git git-lfs \
     curl ca-certificates \
     ffmpeg \
-    python3 python3-venv python3-pip \
+    python3 python3-venv python3-pip python3-dev \
+    build-essential \
     unzip \
     libgl1 libglib2.0-0 libxrender1 libxext6 libsm6 \
     libx11-6 libxi6 libxrandr2 libxxf86vm1 libxfixes3 libxcursor1 libxinerama1 \
@@ -45,8 +46,8 @@ RUN if [ "${USE_CUDA}" = "1" ]; then \
     fi
 
 USER app
-RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib
-RUN pip install --no-cache-dir transformers>=4.35.0 huggingface_hub
+RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub && \
+    pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
 # Create workspace scaffold (empty) — expect repos/models to be mounted at runtime
 RUN mkdir -p ${WORKSPACE}/models/checkpoints \
@@ -108,3 +109,10 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://127.0.0.1:${PORT:-8188}/ || exit 1
 
 CMD ["/bin/bash", "/usr/local/bin/start.sh"]
+
+# Ensure latest transformers is present — reinstall from GitHub after other
+# pip installs so requirements files do not downgrade it.
+USER root
+RUN ${VIRTUAL_ENV}/bin/pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git || true
+RUN chown -R app:app ${VIRTUAL_ENV} ${WORKSPACE} || true
+USER app
