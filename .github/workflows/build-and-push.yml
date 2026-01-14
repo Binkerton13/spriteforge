@@ -6,6 +6,8 @@ on:
     paths:
       - 'Dockerfile.runpod'
       - 'Dockerfile'
+      - 'file_browser.py'
+      - 'supervisord.conf'
       - '.github/workflows/**'
       - 'scripts/**'
   push:
@@ -16,6 +18,8 @@ on:
     paths:
       - 'Dockerfile.runpod'
       - 'Dockerfile'
+      - 'file_browser.py'
+      - 'supervisord.conf'
       - '.github/workflows/**'
       - 'scripts/**'
   workflow_dispatch: {}
