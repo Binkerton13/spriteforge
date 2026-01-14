@@ -46,7 +46,7 @@ RUN if [ "${USE_CUDA}" = "1" ]; then \
     fi
 
 USER app
-RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub && \
+RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub flask supervisor && \
     pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
 # Create workspace scaffold (empty) — expect repos/models to be mounted at runtime
@@ -65,6 +65,11 @@ RUN mkdir -p ${WORKSPACE}/models/checkpoints \
 # Add a lightweight start script that will run `git lfs pull` in any cloned repos
 # Place the start script in /usr/local/bin so a host mount of /workspace doesn't
 # hide or remove it at runtime.
+# Also copy file browser and supervisor config
+COPY file_browser.py /usr/local/bin/file_browser.py
+COPY supervisord.conf /etc/supervisord.conf
+RUN chmod +x /usr/local/bin/file_browser.py
+
 RUN printf '%s\n' "#!/usr/bin/env bash" \
     "set -e" \
     "source \"${VIRTUAL_ENV}/bin/activate\"" \
@@ -92,9 +97,9 @@ RUN printf '%s\n' "#!/usr/bin/env bash" \
     "print(\"CUDA available:\", torch.cuda.is_available())" \
     "print(\"Device:\", torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"None\")" \
     "EOF" \
+    "echo \"Starting ComfyUI on port \${PORT:-8188} and File Browser on port 8080\"" \
     "if [ -d \"/workspace/comfyui\" ]; then" \
-    "  cd \"/workspace/comfyui\"" \
-    "  exec python main.py --listen 0.0.0.0 --port \"\${PORT:-8188}\"" \
+    "  exec supervisord -c /etc/supervisord.conf" \
     "else" \
     "  echo \"No /workspace/comfyui present; mount your ComfyUI repo to /workspace/comfyui\"" \
     "  tail -f /dev/null" \
@@ -103,7 +108,7 @@ RUN printf '%s\n' "#!/usr/bin/env bash" \
 
 USER app
 
-EXPOSE 8188
+EXPOSE 8188 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://127.0.0.1:${PORT:-8188}/ || exit 1

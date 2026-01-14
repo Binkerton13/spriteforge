@@ -74,7 +74,8 @@ RUN pip install --no-cache-dir \
     numpy scipy pillow opencv-python \
     matplotlib scikit-image scikit-learn \
     trimesh pygltflib \
-    huggingface_hub && \
+    huggingface_hub \
+    flask supervisor && \
     pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
 
@@ -175,6 +176,12 @@ RUN mkdir -p \
 # 10. Startup script (always runs baked-in ComfyUI)
 # -----------------------------
 USER root
+
+# Copy file browser and supervisor config
+COPY file_browser.py /usr/local/bin/file_browser.py
+COPY supervisord.conf /etc/supervisord.conf
+RUN chmod +x /usr/local/bin/file_browser.py
+
 RUN mkdir -p /usr/local/bin && \
     echo '#!/usr/bin/env bash'                                   >  /usr/local/bin/start.sh && \
     echo 'set -e'                                               >> /usr/local/bin/start.sh && \
@@ -184,12 +191,12 @@ RUN mkdir -p /usr/local/bin && \
     echo 'print("CUDA available:", torch.cuda.is_available())'  >> /usr/local/bin/start.sh && \
     echo 'print("Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> /usr/local/bin/start.sh && \
     echo 'EOF'                                                  >> /usr/local/bin/start.sh && \
-    echo 'cd /opt/comfyui'                                      >> /usr/local/bin/start.sh && \
-    echo 'exec python main.py --listen 0.0.0.0 --port "${PORT:-8188}"' >> /usr/local/bin/start.sh && \
+    echo 'echo "Starting ComfyUI on port ${PORT:-8188} and File Browser on port 8080"' >> /usr/local/bin/start.sh && \
+    echo 'exec supervisord -c /etc/supervisord.conf'            >> /usr/local/bin/start.sh && \
     chmod +x /usr/local/bin/start.sh
 
 
-EXPOSE 8188
+EXPOSE 8188 8080
 
 # Simple healthcheck that verifies the web server responds on the configured port
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
