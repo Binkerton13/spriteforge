@@ -51,6 +51,24 @@ USER app
 RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub flask supervisor && \
     pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
+# Clone ComfyUI into /opt/comfyui so it's always available
+USER root
+RUN git clone https://github.com/comfyanonymous/ComfyUI.git /opt/comfyui && \
+    chown -R app:app /opt/comfyui
+
+USER app
+WORKDIR /opt/comfyui
+RUN pip install --no-cache-dir -r /opt/comfyui/requirements.txt
+
+# Clone ComfyUI custom nodes
+RUN mkdir -p /opt/comfyui/custom_nodes && \
+    cd /opt/comfyui/custom_nodes && \
+    git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
+    git clone https://github.com/cubiq/ComfyUI_essentials.git && \
+    git clone https://github.com/WASasquatch/was-node-suite-comfyui.git
+
+WORKDIR ${WORKSPACE}
+
 # Create workspace scaffold (empty) — expect repos/models to be mounted at runtime
 RUN mkdir -p ${WORKSPACE}/models/checkpoints \
              ${WORKSPACE}/models/loras \
@@ -101,12 +119,7 @@ RUN printf '%s\n' "#!/usr/bin/env bash" \
     "print(\"Device:\", torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"None\")" \
     "EOF" \
     "echo \"Starting ComfyUI on port \${PORT:-8188} and File Browser on port 8080\"" \
-    "if [ -d \"/workspace/comfyui\" ]; then" \
-    "  exec supervisord -c /etc/supervisord.conf" \
-    "else" \
-    "  echo \"No /workspace/comfyui present; mount your ComfyUI repo to /workspace/comfyui\"" \
-    "  tail -f /dev/null" \
-    "fi" \
+    "exec supervisord -c /etc/supervisord.conf" \
     > /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
 USER app
