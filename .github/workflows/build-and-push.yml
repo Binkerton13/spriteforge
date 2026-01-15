@@ -95,7 +95,7 @@ jobs:
           docker buildx version || true
 
       - name: Log in to GitHub Container Registry using GITHUB_TOKEN
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -120,6 +120,10 @@ jobs:
             USE_CUDA=1
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.description=RunPod 3D AI Workstation with ComfyUI and File Browser
+            org.opencontainers.image.licenses=MIT
 
       - name: Create and push latest alias (only on main)
         if: ${{ github.ref == 'refs/heads/main' }}
