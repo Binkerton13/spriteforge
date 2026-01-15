@@ -89,6 +89,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Convert repository owner to lowercase
+        id: repo_owner
+        run: |
+          echo "owner_lc=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Build and push GPU image (branch + SHA tags)
         uses: docker/build-push-action@v5
         with:
@@ -97,8 +102,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:${{ github.ref_name }}-gpu
-            ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:${{ github.sha }}-gpu
+            ghcr.io/${{ steps.repo_owner.outputs.owner_lc }}/3d-ai-workstation:${{ github.ref_name }}-gpu
+            ghcr.io/${{ steps.repo_owner.outputs.owner_lc }}/3d-ai-workstation:${{ github.sha }}-gpu
           build-args: |
             USE_CUDA=1
           cache-from: type=gha
@@ -112,8 +117,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:${{ github.ref_name }}-cpu
-            ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:${{ github.sha }}-cpu
+            ghcr.io/${{ steps.repo_owner.outputs.owner_lc }}/3d-ai-workstation:${{ github.ref_name }}-cpu
+            ghcr.io/${{ steps.repo_owner.outputs.owner_lc }}/3d-ai-workstation:${{ github.sha }}-cpu
           build-args: |
             USE_CUDA=0
           cache-from: type=gha
@@ -122,10 +127,11 @@ jobs:
       - name: Create and push latest alias (only on main)
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
+          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "Creating latest aliases for main"
-          docker pull ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:main-gpu || true
-          docker tag ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:main-gpu ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:latest
-          docker push ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:latest || true
-          docker pull ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:main-cpu || true
-          docker tag ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:main-cpu ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:latest-cpu
-          docker push ghcr.io/${{ github.repository_owner }}/3d-ai-workstation:latest-cpu || true
+          docker pull ghcr.io/${REPO_OWNER_LOWER}/3d-ai-workstation:main-gpu || true
+          docker tag ghcr.io/${REPO_OWNER_LOWER}/3d-ai-workstation:main-gpu ghcr.io/${REPO_OWNER_LOWER}/3d-ai-workstation:latest
+          docker push ghcr.io/${REPO_OWNER_LOWER}/3d-ai-workstation:latest || true
+          docker pull ghcr.io/${REPO_OWNER_LOWER}/3d-ai-workstation:main-cpu || true
+          docker tag ghcr.io/${REPO_OWNER_LOWER}/3d-ai-workstation:main-cpu ghcr.io/${REPO_OWNER_LOWER}/3d-ai-workstation:latest-cpu
+          docker push ghcr.io/${REPO_OWNER_LOWER}/3d-ai-workstation:latest-cpu || true
