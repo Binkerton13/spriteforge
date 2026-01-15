@@ -66,10 +66,12 @@ RUN mkdir -p ${WORKSPACE}/models/checkpoints \
 # Place the start script in /usr/local/bin so a host mount of /workspace doesn't
 # hide or remove it at runtime.
 # Also copy file browser and supervisor config
+USER root
 COPY file_browser.py /usr/local/bin/file_browser.py
 COPY supervisord.conf /etc/supervisord.conf
 RUN chmod +x /usr/local/bin/file_browser.py
 
+USER app
 RUN printf '%s\n' "#!/usr/bin/env bash" \
     "set -e" \
     "source \"${VIRTUAL_ENV}/bin/activate\"" \
