@@ -71,7 +71,6 @@ COPY file_browser.py /usr/local/bin/file_browser.py
 COPY supervisord.conf /etc/supervisord.conf
 RUN chmod +x /usr/local/bin/file_browser.py
 
-USER app
 RUN printf '%s\n' "#!/usr/bin/env bash" \
     "set -e" \
     "source \"${VIRTUAL_ENV}/bin/activate\"" \
