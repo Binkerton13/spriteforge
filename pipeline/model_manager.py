@@ -91,7 +91,8 @@ class ModelManager:
     
     def list_models(self, model_type: str) -> List[Dict[str, any]]:
         """
-        List all models of a specific type
+        List all models of a specific type (includes subdirectories)
+        ComfyUI Manager creates subfolders like checkpoints/sdxl/, loras/sdxl/, etc.
         
         Returns:
             List of dicts with model info (name, path, size, modified)
@@ -105,10 +106,18 @@ class ModelManager:
         models = []
         
         for ext in extensions:
-            for model_file in model_dir.glob(f"*{ext}"):
+            # Use rglob to recursively search subdirectories (e.g., checkpoints/sdxl/)
+            for model_file in model_dir.rglob(f"*{ext}"):
+                # Skip if it's not a file
+                if not model_file.is_file():
+                    continue
+                    
                 stat = model_file.stat()
+                # Use relative path from model_dir for display (e.g., "sdxl/model.safetensors")
+                rel_path = model_file.relative_to(model_dir)
+                
                 models.append({
-                    'name': model_file.name,
+                    'name': str(rel_path),  # Include subdirectory in name
                     'path': str(model_file.relative_to(self.comfyui_root)),
                     'size': stat.st_size,
                     'size_mb': round(stat.st_size / (1024 * 1024), 2),
