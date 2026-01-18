@@ -192,31 +192,42 @@ function updateGridColors() {
 
 function loadModelIntoViewer(file) {
     const fileExtension = file.name.split('.').pop().toLowerCase();
-    const reader = new FileReader();
     
-    reader.onload = (e) => {
-        // Remove existing model
-        if (currentModel) {
-            scene.remove(currentModel);
-        }
-        
-        if (fileExtension === 'fbx') {
+    // Remove existing model
+    if (currentModel) {
+        scene.remove(currentModel);
+    }
+    
+    if (fileExtension === 'fbx') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
             const loader = new THREE.FBXLoader();
-            loader.load(e.target.result, (fbx) => {
+            // FBXLoader needs an ArrayBuffer, not a data URL
+            loader.parse(e.target.result, '', (fbx) => {
                 setupModel(fbx, file.name);
+            }, (error) => {
+                console.error('Error loading FBX:', error);
+                showError('Failed to load FBX file. Please check the console for details.');
             });
-        } else if (fileExtension === 'obj') {
+        };
+        reader.readAsArrayBuffer(file);
+        
+    } else if (fileExtension === 'obj') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
             const loader = new THREE.OBJLoader();
-            loader.load(e.target.result, (obj) => {
-                setupModel(obj, file.name);
-            });
-        }
-    };
-    
-    reader.readAsDataURL(file);
+            // OBJLoader can parse text directly
+            const obj = loader.parse(e.target.result);
+            setupModel(obj, file.name);
+        };
+        reader.readAsText(file);
+    }
 }
 
 function setupModel(model, filename) {
+    console.log('Setting up model:', filename);
+    console.log('Model object:', model);
+    
     currentModel = model;
     
     // Center and scale model
@@ -224,26 +235,37 @@ function setupModel(model, filename) {
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     
+    console.log('Model bounds:', { center, size });
+    
     const maxDim = Math.max(size.x, size.y, size.z);
     const scale = 2 / maxDim;
-    model.scale.multiplyScalar(scale);
     
+    console.log('Applying scale:', scale);
+    
+    model.scale.multiplyScalar(scale);
     model.position.sub(center.multiplyScalar(scale));
     
-    // Add material
+    // Add material if needed
     model.traverse((child) => {
         if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({
-                color: 0x808080,
-                metalness: 0.3,
-                roughness: 0.7
-            });
+            console.log('Found mesh:', child.name);
+            
+            // Only replace material if it doesn't have one or it's not properly set up
+            if (!child.material || child.material.type === 'MeshBasicMaterial') {
+                child.material = new THREE.MeshStandardMaterial({
+                    color: 0x808080,
+                    metalness: 0.3,
+                    roughness: 0.7
+                });
+            }
+            
             child.castShadow = true;
             child.receiveShadow = true;
         }
     });
     
     scene.add(model);
+    console.log('Model added to scene');
     
     // Update stats
     updateModelStats(model);
@@ -259,6 +281,8 @@ function setupModel(model, filename) {
     
     // Reset camera
     resetCamera();
+    
+    showSuccess(`Loaded ${filename}`);
 }
 
 function updateModelStats(model) {
