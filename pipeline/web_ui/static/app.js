@@ -193,6 +193,8 @@ function updateGridColors() {
 function loadModelIntoViewer(file) {
     const fileExtension = file.name.split('.').pop().toLowerCase();
     
+    console.log('Loading file:', file.name, 'Extension:', fileExtension, 'Size:', file.size);
+    
     // Remove existing model
     if (currentModel) {
         scene.remove(currentModel);
@@ -201,32 +203,97 @@ function loadModelIntoViewer(file) {
     if (fileExtension === 'fbx') {
         const reader = new FileReader();
         reader.onload = (e) => {
-            const loader = new THREE.FBXLoader();
-            // FBXLoader needs an ArrayBuffer, not a data URL
-            loader.parse(e.target.result, '', (fbx) => {
-                setupModel(fbx, file.name);
-            }, (error) => {
-                console.error('Error loading FBX:', error);
-                showError('Failed to load FBX file. Please check the console for details.');
-            });
+            console.log('FileReader loaded FBX, buffer size:', e.target.result.byteLength);
+            
+            // Check if fflate is available
+            if (typeof fflate === 'undefined') {
+                console.error('fflate library is not loaded!');
+                showError('Required library fflate is not loaded. Please refresh the page.');
+                return;
+            }
+            console.log('fflate library is available:', typeof fflate);
+            
+            try {
+                const loader = new THREE.FBXLoader();
+                console.log('FBXLoader created, calling parse...');
+                
+                // FBXLoader needs an ArrayBuffer, not a data URL
+                const result = loader.parse(e.target.result, '');
+                console.log('Parse returned:', result);
+                
+                if (result) {
+                    setupModel(result, file.name);
+                } else {
+                    console.error('Parse returned null/undefined');
+                    showError('FBX parse returned no data');
+                }
+            } catch (error) {
+                console.error('Exception in FBX loading:', error);
+                console.error('Error stack:', error.stack);
+                showError('Exception loading FBX: ' + error.message);
+            }
         };
+        
+        reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            showError('Failed to read FBX file');
+        };
+        
         reader.readAsArrayBuffer(file);
         
     } else if (fileExtension === 'obj') {
         const reader = new FileReader();
         reader.onload = (e) => {
-            const loader = new THREE.OBJLoader();
-            // OBJLoader can parse text directly
-            const obj = loader.parse(e.target.result);
-            setupModel(obj, file.name);
+            console.log('FileReader loaded OBJ, text length:', e.target.result.length);
+            
+            try {
+                const loader = new THREE.OBJLoader();
+                // OBJLoader can parse text directly
+                const obj = loader.parse(e.target.result);
+                console.log('OBJ parsed successfully:', obj);
+                setupModel(obj, file.name);
+            } catch (error) {
+                console.error('Exception in OBJ loading:', error);
+                showError('Exception loading OBJ: ' + error.message);
+            }
         };
+        
+        reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            showError('Failed to read OBJ file');
+        };
+        
         reader.readAsText(file);
     }
 }
 
 function setupModel(model, filename) {
-    console.log('Setting up model:', filename);
+    console.log('=== Setting up model:', filename, '===');
+    console.log('Model type:', model.type);
     console.log('Model object:', model);
+    
+    // Count all meshes recursively
+    let meshCount = 0;
+    model.traverse((child) => {
+        if (child.isMesh || child.isSkinnedMesh) {
+            meshCount++;
+            console.log('Found mesh:', child.name, 'Type:', child.type);
+            console.log('  Has geometry:', !!child.geometry);
+            console.log('  Has material:', !!child.material);
+            
+            if (child.geometry) {
+                console.log('  Vertices:', child.geometry.attributes.position?.count || 0);
+            }
+        }
+    });
+    
+    console.log('Total meshes found:', meshCount);
+    
+    if (meshCount === 0) {
+        console.error('ERROR: No meshes found in model!');
+        showError('Model contains no visible geometry');
+        return;
+    }
     
     currentModel = model;
     
@@ -248,15 +315,35 @@ function setupModel(model, filename) {
     // Add material if needed
     model.traverse((child) => {
         if (child.isMesh) {
-            console.log('Found mesh:', child.name);
+            console.log('Processing mesh:', child.name);
+            
+            // Only compute normals if they don't exist or are broken
+            if (child.geometry) {
+                const hasNormals = child.geometry.attributes.normal !== undefined;
+                console.log('  Has normals:', hasNormals);
+                
+                if (!hasNormals) {
+                    child.geometry.computeVertexNormals();
+                    console.log('  Computed vertex normals');
+                }
+            }
             
             // Only replace material if it doesn't have one or it's not properly set up
             if (!child.material || child.material.type === 'MeshBasicMaterial') {
+                console.log('  Replacing material with MeshStandardMaterial');
                 child.material = new THREE.MeshStandardMaterial({
                     color: 0x808080,
                     metalness: 0.3,
-                    roughness: 0.7
+                    roughness: 0.7,
+                    flatShading: false
                 });
+            } else {
+                console.log('  Keeping existing material:', child.material.type);
+                // Ensure smooth shading on existing materials
+                if (child.material.flatShading !== undefined) {
+                    child.material.flatShading = false;
+                    child.material.needsUpdate = true;
+                }
             }
             
             child.castShadow = true;
@@ -265,7 +352,9 @@ function setupModel(model, filename) {
     });
     
     scene.add(model);
-    console.log('Model added to scene');
+    console.log('Model added to scene. Scene children count:', scene.children.length);
+    console.log('Camera position:', camera.position);
+    console.log('Camera looking at:', controls.target);
     
     // Update stats
     updateModelStats(model);
@@ -275,6 +364,7 @@ function setupModel(model, filename) {
     if (materialBtn) {
         materialBtn.style.display = 'inline-block';
     }
+
     
     // Check for animations
     setupAnimation(model);
@@ -1666,9 +1756,17 @@ async function checkSystemStatus() {
         const response = await fetch(`${API_BASE}/health`);
         const data = await response.json();
         
-        document.getElementById('pipelineStatus').querySelector('.status-dot').classList.add('active');
+        const statusElement = document.getElementById('pipelineStatus');
+        const statusDot = statusElement?.querySelector('.status-dot');
+        if (statusDot) {
+            statusDot.classList.add('active');
+        }
     } catch (error) {
-        document.getElementById('pipelineStatus').querySelector('.status-dot').classList.remove('active');
+        const statusElement = document.getElementById('pipelineStatus');
+        const statusDot = statusElement?.querySelector('.status-dot');
+        if (statusDot) {
+            statusDot.classList.remove('active');
+        }
     }
 }
 
@@ -1762,7 +1860,7 @@ async function runPipeline() {
             btn.textContent = '⏳ Pipeline Running...';
             
             // Show status section
-            document.getElementById('pipelineStatus').style.display = 'block';
+            document.getElementById('pipelineStagesContainer').style.display = 'block';
             
             // Start polling for status updates
             startPipelineStatusPolling();

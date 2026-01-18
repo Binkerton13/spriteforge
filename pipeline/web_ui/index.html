@@ -6,6 +6,7 @@
     <title>3D Character Pipeline - Project Manager</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -404,7 +405,7 @@
                         🔄 Refresh Status
                     </button>
                     
-                    <div id="pipelineStatus" class="pipeline-status" style="margin-top: 1rem; display: none;">
+                    <div id="pipelineStagesContainer" class="pipeline-status" style="margin-top: 1rem; display: none;">
                         <h4>Pipeline Status</h4>
                         <div id="pipelineStages"></div>
                         <div class="pipeline-log" id="pipelineLog" style="display: none;">
