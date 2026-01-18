@@ -35,20 +35,25 @@ class ModelManager:
     }
     
     # Required models for pipeline workflows
+    # Keywords are optional hints - any model of the correct type will work
     REQUIRED_MODELS = {
         'texture_workflow': {
-            'checkpoints': ['sdxl'],  # Any checkpoint with 'sdxl' in name
+            'checkpoints': [],  # Any SDXL checkpoint (detected by size ~6-7GB)
             'controlnet': [],
-            'ipadapter': ['ip-adapter'],
+            'ipadapter': [],  # Any IP-Adapter model
             'vae': []  # Optional, SDXL has built-in VAE
         },
         'sprite_generation_workflow': {
-            'checkpoints': ['sdxl'],
-            'controlnet': ['openpose', 'depth'],
-            'ipadapter': ['ip-adapter'],
+            'checkpoints': [],  # Any SDXL checkpoint
+            'controlnet': ['openpose', 'depth'],  # Need both for sprite generation
+            'ipadapter': [],
             'vae': []
         }
     }
+    
+    # SDXL checkpoint detection - typical size range in bytes
+    SDXL_SIZE_MIN = 5_500_000_000  # 5.5 GB
+    SDXL_SIZE_MAX = 7_500_000_000  # 7.5 GB
     
     def __init__(self, comfyui_root: Path):
         """
@@ -137,6 +142,25 @@ class ModelManager:
         model_dir.mkdir(parents=True, exist_ok=True)
         return model_dir / filename
     
+    def is_sdxl_checkpoint(self, model_info: Dict) -> bool:
+        """
+        Detect if a checkpoint is SDXL based on size and optional filename hints
+        SDXL base models are typically 6.46-6.94GB
+        """
+        size = model_info.get('size', 0)
+        name = model_info.get('name', '').lower()
+        
+        # Size-based detection (primary method)
+        if self.SDXL_SIZE_MIN <= size <= self.SDXL_SIZE_MAX:
+            return True
+        
+        # Filename hints (secondary)
+        sdxl_keywords = ['sdxl', 'xl', 'stable diffusion xl']
+        if any(keyword in name for keyword in sdxl_keywords):
+            return True
+        
+        return False
+    
     def validate_workflow_models(self, workflow_name: str) -> Dict[str, any]:
         """
         Check if all required models for a workflow are available
@@ -152,10 +176,22 @@ class ModelManager:
         available_models = self.list_all_models()
         
         for model_type, required_keywords in requirements.items():
+            type_models = available_models.get(model_type, [])
+            
+            # Special handling for checkpoints - check for SDXL
+            if model_type == 'checkpoints':
+                sdxl_checkpoints = [m for m in type_models if self.is_sdxl_checkpoint(m)]
+                if not sdxl_checkpoints:
+                    missing.append({
+                        'type': model_type,
+                        'keyword': 'SDXL',
+                        'description': 'SDXL checkpoint (6-7GB, .safetensors)'
+                    })
+                continue
+            
+            # For other types, check keywords if specified
             if not required_keywords:
                 continue  # Optional
-            
-            type_models = available_models.get(model_type, [])
             
             for keyword in required_keywords:
                 # Check if any model contains the keyword
@@ -212,7 +248,8 @@ class ModelManager:
         """
         Auto-select models for a workflow based on:
         1. Last used models
-        2. First available model matching requirements
+        2. First available SDXL checkpoint (for checkpoints)
+        3. First available model matching requirements (for others)
         
         Returns:
             Dict of {model_type: model_filename}
@@ -222,9 +259,6 @@ class ModelManager:
         selections = {}
         
         for model_type, required_keywords in requirements.items():
-            if not required_keywords:
-                continue
-            
             # Try last used first
             last_used = self.get_last_used_model(model_type)
             if last_used:
@@ -233,15 +267,27 @@ class ModelManager:
                     selections[model_type] = last_used
                     continue
             
-            # Otherwise, find first matching model
             type_models = available_models.get(model_type, [])
             
-            for keyword in required_keywords:
-                matching = [m for m in type_models 
-                           if keyword.lower() in m['name'].lower()]
-                if matching:
-                    selections[model_type] = matching[0]['name']
-                    break
+            # Special handling for checkpoints - find SDXL
+            if model_type == 'checkpoints':
+                sdxl_checkpoints = [m for m in type_models if self.is_sdxl_checkpoint(m)]
+                if sdxl_checkpoints:
+                    selections[model_type] = sdxl_checkpoints[0]['name']
+                    continue
+            
+            # For other types with keywords, match them
+            if required_keywords:
+                for keyword in required_keywords:
+                    matching = [m for m in type_models 
+                               if keyword.lower() in m['name'].lower()]
+                    if matching:
+                        selections[model_type] = matching[0]['name']
+                        break
+            else:
+                # No specific requirements, pick first available
+                if type_models:
+                    selections[model_type] = type_models[0]['name']
         
         return selections
     
