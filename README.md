@@ -19,6 +19,7 @@ Access the file browser at `http://<your-runpod-url>:8080/` to:
 
 The file browser provides a modern, dark-themed interface optimized for managing AI model files, scripts, and outputs.
 
+
 ### AI Tools Included
 - **ComfyUI**: Node-based stable diffusion UI
 - **UniRig**: Advanced 3D rigging
@@ -64,3 +65,8 @@ When deploying to Runpod:
 2. Map port 8080 in your Runpod template settings to access the file browser
 3. Use the file browser to upload models, scripts, and manage your workspace
 4. All changes are persisted in the `/workspace` volume
+
+
+
+
+

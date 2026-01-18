@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "inputs": { "image": "albedo" }
+    },
+    {
+      "id": 2,
+      "type": "NormalMap",
+      "inputs": {
+        "image": ["1", 0],
+        "strength": 2.0
+      }
+    },
+    {
+      "id": 3,
+      "type": "SaveImage",
+      "inputs": {
+        "filename_prefix": "output",
+        "image": ["2", 0]
+      }
+    }
+  ],
+  "links": [
+    [1, 0, 2, 0],
+    [2, 0, 3, 0]
+  ]
+}

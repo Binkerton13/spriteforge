@@ -95,7 +95,7 @@ COPY supervisord.conf /etc/supervisord.conf
 RUN chmod +x /usr/local/bin/file_browser.py /usr/local/bin/start.sh
 RUN chown -R app:app /opt/pipeline /opt/config
 
-
+    > /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
 USER app
 
@@ -112,3 +112,4 @@ USER root
 RUN ${VIRTUAL_ENV}/bin/pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git || true
 RUN chown -R app:app ${VIRTUAL_ENV} ${WORKSPACE} || true
 USER app
+

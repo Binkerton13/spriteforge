@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Character Pipeline - Project Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🎬 3D Character Pipeline</h1>
+                <div class="project-selector">
+                    <select id="projectSelect" onchange="loadProject(this.value)">
+                        <option value="">Select Project...</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="showNewProjectDialog()">+ New Project</button>
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+                        <span id="themeIcon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Sidebar - File Upload -->
+            <div class="sidebar sidebar-left">
+                <h2>📂 Input Files</h2>
+                
+                <!-- Character Mesh Upload -->
+                <div class="upload-section">
+                    <h3>Character Mesh</h3>
+                    <div class="drop-zone" id="meshDropZone" 
+                         ondrop="handleDrop(event, 'mesh')" 
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)">
+                        <div class="drop-zone-content">
+                            <span class="drop-icon">📦</span>
+                            <p>Drop FBX/OBJ file here</p>
+                            <input type="file" id="meshInput" accept=".fbx,.obj" onchange="handleFileSelect(event, 'mesh')" style="display: none">
+                            <button class="btn btn-small" onclick="document.getElementById('meshInput').click()">Browse</button>
+                        </div>
+                        <div class="file-info" id="meshInfo" style="display: none"></div>
+                    </div>
+                </div>
+
+                <!-- UDIM Tiles Upload -->
+                <div class="upload-section">
+                    <h3>UDIM Tiles</h3>
+                    <div class="drop-zone" id="udimDropZone"
+                         ondrop="handleDrop(event, 'udim')"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)">
+                        <div class="drop-zone-content">
+                            <span class="drop-icon">🖼️</span>
+                            <p>Drop UDIM PNG files here</p>
+                            <input type="file" id="udimInput" accept=".png" multiple onchange="handleFileSelect(event, 'udim')" style="display: none">
+                            <button class="btn btn-small" onclick="document.getElementById('udimInput').click()">Browse</button>
+                        </div>
+                        <div id="udimList" class="file-list"></div>
+                    </div>
+                </div>
+
+                <!-- Style References -->
+                <div class="upload-section">
+                    <h3>Style References</h3>
+                    <div class="drop-zone" id="styleRefDropZone"
+                         ondrop="handleDrop(event, 'style_reference')"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)">
+                        <div class="drop-zone-content">
+                            <span class="drop-icon">🎨</span>
+                            <p>Style/texture references</p>
+                            <input type="file" id="styleRefInput" accept="image/*" multiple onchange="handleFileSelect(event, 'style_reference')" style="display: none">
+                            <button class="btn btn-small" onclick="document.getElementById('styleRefInput').click()">Browse</button>
+                        </div>
+                        <div id="styleRefList" class="file-list"></div>
+                    </div>
+                </div>
+
+                <!-- Pose/Motion References -->
+                <div class="upload-section">
+                    <h3>Pose References</h3>
+                    <div class="drop-zone" id="poseRefDropZone"
+                         ondrop="handleDrop(event, 'pose_reference')"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)">
+                        <div class="drop-zone-content">
+                            <span class="drop-icon">🧘</span>
+                            <p>Motion/pose references</p>
+                            <input type="file" id="poseRefInput" accept="image/*" multiple onchange="handleFileSelect(event, 'pose_reference')" style="display: none">
+                            <button class="btn btn-small" onclick="document.getElementById('poseRefInput').click()">Browse</button>
+                        </div>
+                        <small style="color: var(--text-secondary); margin-top: 0.5rem; display: block;">Tip: Use OpenPose, DWPose, or depth maps for best results</small>
+                        <div id="poseRefList" class="file-list"></div>
+                    </div>
+                </div>
+
+                <!-- Upload Progress -->
+                <div id="uploadProgress" style="display: none">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Uploading...</p>
+                </div>
+            </div>
+
+            <!-- Center - 3D Viewer -->
+            <div class="viewer-container">
+                <div class="viewer-header">
+                    <h2 id="viewerTitle">🎨 Model Viewer</h2>
+                    <div class="viewer-controls">
+                        <select id="imageTypeSelector" style="display: none;" onchange="switchImageType(this.value)">
+                            <option value="udim">UDIM Tiles</option>
+                            <option value="style">Style References</option>
+                            <option value="pose">Pose References</option>
+                            <option value="textures">Generated Textures</option>
+                        </select>
+                        <button class="btn btn-small" id="viewModeToggle" onclick="toggleViewMode()">🖼️ Image View</button>
+                        <button class="btn btn-small" id="materialViewBtn" onclick="toggleMaterialView()" style="display: none;">🎨 Material View</button>
+                        <button class="btn btn-small" id="resetViewBtn" onclick="resetCamera()">↻ Reset View</button>
+                        <button class="btn btn-small" id="wireframeBtn" onclick="toggleWireframe()">⬚ Wireframe</button>
+                        <button class="btn btn-small" id="gridBtn" onclick="toggleGrid()">⊞ Grid</button>
+                    </div>
+                </div>
+                <div id="viewer3d" class="viewer-canvas">
+                    <div class="animation-controls" id="animControls" style="display: none;">
+                        <button class="anim-btn" id="playPauseBtn" onclick="toggleAnimation()">▶️</button>
+                        <input type="range" id="animSlider" min="0" max="100" value="0" oninput="seekAnimation(this.value)">
+                        <span id="animTime">0:00 / 0:00</span>
+                    </div>
+                </div>
+                <div id="imageViewer" class="viewer-canvas" style="display: none;">
+                    <div class="image-viewer-content">
+                        <div id="imageViewerGrid" class="image-grid"></div>
+                        <div id="imageViewerSingle" class="image-single" style="display: none;">
+                            <img id="imageViewerImg" src="" alt="Preview">
+                        </div>
+                    </div>
+                </div>
+                <div class="viewer-info">
+                    <span id="vertexCount">Vertices: -</span>
+                    <span id="faceCount">Faces: -</span>
+                    <span id="meshFormat">Format: -</span>
+                    <span id="imageCount" style="display: none;">Images: -</span>
+                </div>
+            </div>
+
+            <!-- Right Sidebar - Configuration -->
+            <div class="sidebar sidebar-right">
+                <h2>⚙️ Configuration</h2>
+                
+                <!-- Project Settings -->
+                <div class="config-section">
+                    <h3>Project Settings</h3>
+                    <div class="form-group">
+                        <label for="projectNameInput">Project Name</label>
+                        <input type="text" id="projectNameInput" placeholder="MyCharacter" disabled>
+                    </div>
+                </div>
+
+                <!-- Texture Prompts -->
+                 <!-- IAW prompt_lbrary.json -->
+                <div class="config-section">
+                    <h3>Texture Generation</h3>
+                    <div class="form-group">
+                        <label for="texturePrompt">Positive Prompt</label>
+                        <textarea id="texturePrompt" rows="3" placeholder="skin texture, realistic pores, high detail"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="textureNegative">Negative Prompt</label>
+                        <textarea id="textureNegative" rows="2" placeholder="distortion, artifacts, blur"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="textureSeed">Seed</label>
+                        <input type="number" id="textureSeed" value="12345">
+                    </div>
+                </div>
+
+                <!-- Rig Settings -->
+                <div class="config-section">
+                    <h3>Rigging</h3>
+                    <div class="form-group">
+                        <label for="rigPreset">Preset</label>
+                        <select id="rigPreset">
+                            <option value="humanoid_standard">Humanoid Standard</option>
+                            <option value="humanoid_game">Humanoid Game</option>
+                            <option value="creature">Creature</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="rigScale">Scale</label>
+                        <input type="number" id="rigScale" value="1.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="rigOrientation">Orientation</label>
+                        <select id="rigOrientation">
+                            <option value="Y_UP">Y-Up</option>
+                            <option value="Z_UP">Z-Up</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Animation Settings -->
+                <div class="config-section">
+                    <h3>Animation</h3>
+                    
+                    <!-- Prompt Library Selector -->
+                    <div class="form-group">
+                        <label for="promptCategory">Category</label>
+                        <select id="promptCategory" onchange="loadPromptCategory(this.value)">
+                            <option value="">Select category...</option>
+                            <option value="locomotion">Locomotion</option>
+                            <option value="idle">Idle</option>
+                            <option value="combat">Combat</option>
+                            <option value="gestures">Gestures</option>
+                            <option value="cinematic">Cinematic</option>
+                            <option value="transitions">Transitions</option>
+                            <option value="stylized">Stylized</option>
+                            <option value="traversal">Traversal</option>
+                            <option value="special">Special</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="promptSelectGroup" style="display: none;">
+                        <label for="promptSelect">Preset</label>
+                        <select id="promptSelect" onchange="loadPromptPreset(this.value)">
+                            <option value="">Select preset...</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Motion Prompt Fields -->
+                    <div class="form-group">
+                        <label for="motionField">Motion</label>
+                        <textarea id="motionField" rows="3" placeholder="Describe the primary motion and mechanics"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="styleField">Style</label>
+                        <textarea id="styleField" rows="2" placeholder="Animation style and characteristics"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="constraintsField">Constraints</label>
+                        <textarea id="constraintsField" rows="2" placeholder="Technical constraints and requirements"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cameraField">Camera</label>
+                        <input type="text" id="cameraField" value="Locked." placeholder="Camera behavior">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="outputField">Output</label>
+                        <input type="text" id="outputField" value="30 frames, 30fps." placeholder="Duration and frame rate">
+                    </div>
+                </div>
+
+                <!-- References -->
+                <div class="config-section">
+                    <h3>References</h3>
+                    <div class="reference-summary">
+                        <div class="ref-count">
+                            <span id="styleRefCount">Style: 0</span>
+                            <span id="poseRefCount">Pose: 0</span>
+                        </div>
+                        <small style="color: var(--text-secondary); margin-top: 0.5rem; display: block;">Use Image View dropdown to preview references</small>
+                    </div>
+                </div>
+
+                <!-- Export Settings -->
+                <div class="config-section">
+                    <h3>Export Formats</h3>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="exportFBX" checked> FBX</label>
+                        <label><input type="checkbox" id="exportGLTF" checked> glTF</label>
+                        <label><input type="checkbox" id="exportUSD"> USD</label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-secondary btn-block" onclick="saveConfig()">💾 Save Config</button>
+                    <button class="btn btn-success btn-block" onclick="startPipeline()">▶️ Run Pipeline</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipeline Status Footer -->
+        <footer class="status-bar" id="statusBar">
+            <div class="status-content">
+                <span id="statusText">Ready</span>
+                <div class="status-indicators">
+                    <span class="indicator" id="comfyStatus">ComfyUI: <span class="status-dot"></span></span>
+                    <span class="indicator" id="pipelineStatus">Pipeline: <span class="status-dot"></span></span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- New Project Modal -->
+    <div id="newProjectModal" class="modal">
+        <div class="modal-content">
+            <h2>Create New Project</h2>
+            <div class="form-group">
+                <label for="newProjectName">Project Name</label>
+                <input type="text" id="newProjectName" placeholder="MyCharacter" autofocus>
+                <small>Alphanumeric, underscores, and hyphens only</small>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createNewProject()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pipeline Progress Modal -->
+    <div id="pipelineModal" class="modal">
+        <div class="modal-content modal-large">
+            <h2>Pipeline Progress</h2>
+            <div id="pipelineSteps"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closePipelineModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

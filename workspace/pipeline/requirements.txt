@@ -1,0 +1,21 @@
+# Python dependencies for 3D Character Pipeline
+# Install with: pip install -r requirements.txt
+
+# API Server & Web GUI
+flask>=2.3.0
+werkzeug>=2.3.0
+requests>=2.31.0
+
+# Image Processing (for texture workflows)
+Pillow>=10.0.0
+
+# 3D Processing (if running locally)
+# Note: Blender bpy is typically bundled with Blender
+# Install Blender as standalone application
+
+# ComfyUI Integration
+# Note: ComfyUI dependencies installed separately
+
+# HY-Motion
+# Note: Install HY-Motion from: https://github.com/Tencent/HunyuanVideo
+# Follow their installation instructions
