@@ -4,10 +4,23 @@ set -e
 # Activate Python virtual environment
 source "${VIRTUAL_ENV}/bin/activate"
 
-# Create symlink to ComfyUI if it doesn't exist
-if [ ! -e "/workspace/ComfyUI" ]; then
-  echo "Creating symlink to ComfyUI..."
-  ln -s /opt/comfyui /workspace/ComfyUI
+# Setup persistent ComfyUI models directory
+if [ ! -d "/workspace/ComfyUI/models" ]; then
+  echo "Creating persistent ComfyUI models directory structure..."
+  mkdir -p /workspace/ComfyUI/models/{checkpoints,loras,vae,controlnet,ipadapter,embeddings,upscale_models,clip_vision}
+  chown -R app:app /workspace/ComfyUI || true
+fi
+
+# Symlink ComfyUI models directory to persistent storage
+if [ ! -L "/opt/comfyui/models" ] && [ -d "/opt/comfyui/models" ]; then
+  echo "Linking ComfyUI models to persistent storage..."
+  # Backup original models directory if it has content
+  if [ "$(ls -A /opt/comfyui/models)" ]; then
+    mv /opt/comfyui/models /opt/comfyui/models.original
+  else
+    rm -rf /opt/comfyui/models
+  fi
+  ln -s /workspace/ComfyUI/models /opt/comfyui/models
 fi
 
 # Copy pipeline files to workspace if not already there
