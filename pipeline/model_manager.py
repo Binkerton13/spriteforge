@@ -74,7 +74,7 @@ class ModelManager:
             models_dir = self.comfyui_root / 'models'
             log(f"  Models directory: {models_dir}")
             log(f"  Models exists: {models_dir.exists()}")
-                self.config_path = Path(__file__).parent / "model_config.json"
+        self.config_path = Path(__file__).parent / "model_config.json"
         self.load_config()
     
     def load_config(self):
