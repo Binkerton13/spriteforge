@@ -41,7 +41,7 @@ RUN python -m venv --system-site-packages /opt/venv && \
     /opt/venv/bin/pip install --upgrade pip wheel setuptools
 
 USER app
-RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub flask werkzeug supervisor && \
+RUN pip install --no-cache-dir "numpy<2.0" scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub flask werkzeug supervisor && \
     pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
 # Clone ComfyUI into /opt/comfyui so it's always available
