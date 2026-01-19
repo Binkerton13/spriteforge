@@ -82,6 +82,40 @@ RUN mkdir -p ${WORKSPACE}/models/checkpoints \
              ${WORKSPACE}/animations \
              ${WORKSPACE}/scripts
 
+# Download essential models for SDXL workflows
+# These are required for texture_workflow.json and sprite_generation_workflow.json
+USER root
+RUN echo "Downloading essential SDXL models..." && \
+    mkdir -p /opt/comfyui/models/checkpoints \
+             /opt/comfyui/models/controlnet \
+             /opt/comfyui/models/ipadapter && \
+    chown -R app:app /opt/comfyui/models
+
+USER app
+# SDXL Base Model with VAE (8.8GB) - Primary checkpoint
+RUN curl -L -o /opt/comfyui/models/checkpoints/sd_xl_base_1.0_0.9vae.safetensors \
+    "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0_0.9vae.safetensors" || \
+    echo "Warning: Failed to download SDXL base model"
+
+# ControlNet Depth for SDXL (395MB) - For depth-guided generation
+RUN curl -L -o /opt/comfyui/models/controlnet/control-lora-depth-rank256.safetensors \
+    "https://huggingface.co/stabilityai/control-lora/resolve/main/control-LoRAs-rank256/control-lora-depth-rank256.safetensors" || \
+    echo "Warning: Failed to download ControlNet depth"
+
+# ControlNet OpenPose for SDXL (2.5GB) - For pose-guided generation
+RUN curl -L -o /opt/comfyui/models/controlnet/thibaud_xl_openpose.safetensors \
+    "https://huggingface.co/thibaud/controlnet-openpose-sdxl-1.0/resolve/main/OpenPoseXL2.safetensors" || \
+    echo "Warning: Failed to download ControlNet OpenPose"
+
+# IP-Adapter for SDXL (851MB) - For style reference transfer
+RUN curl -L -o /opt/comfyui/models/ipadapter/ip-adapter_sdxl.safetensors \
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors" || \
+    echo "Warning: Failed to download IP-Adapter"
+
+USER root
+RUN chown -R app:app /opt/comfyui/models
+USER app
+
 # Add a lightweight start script that will run `git lfs pull` in any cloned repos
 # Place the start script in /usr/local/bin so a host mount of /workspace doesn't
 # hide or remove it at runtime.
