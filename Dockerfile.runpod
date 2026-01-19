@@ -1,4 +1,5 @@
-FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+# Use PyTorch official image which has PyTorch + CUDA already installed (~5GB savings vs installing from scratch)
+FROM pytorch/pytorch:2.1.2-cuda12.1-cudnn8-runtime
 
 # Build-time flag: set to 0 for CPU-only test builds (local machines w/o NVIDIA)
 ARG USE_CUDA=1
@@ -15,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git git-lfs \
     curl ca-certificates \
     ffmpeg \
-    python3 python3-venv python3-pip python3-dev \
+    python3-dev \
     build-essential \
     unzip \
     libgl1 libglib2.0-0 libxrender1 libxext6 libsm6 \
@@ -27,25 +28,17 @@ RUN git lfs install --system || true
 RUN mkdir -p ${WORKSPACE}
 WORKDIR ${WORKSPACE}
 
-# Create Python venv and install runtime Python deps (torch install varies by USE_CUDA)
-RUN python3 -m venv /opt/venv && \
-    /opt/venv/bin/pip install --upgrade pip wheel setuptools
-
+# PyTorch base image uses conda, but we'll use system python for simplicity
+# Create venv pointing to system python (already has PyTorch installed)
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 # Create non-root user early
 RUN groupadd -r app || true && useradd -r -m -g app app || true
 
-# Install PyTorch as root, then fix permissions
-RUN if [ "${USE_CUDA}" = "1" ]; then \
-        pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
-    else \
-        pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu; \
-    fi
-
-# Fix venv and workspace ownership after PyTorch install
-RUN chown -R app:app ${VIRTUAL_ENV} ${WORKSPACE} || true
+# Create a minimal venv that uses the existing PyTorch from base image
+RUN python -m venv --system-site-packages /opt/venv && \
+    /opt/venv/bin/pip install --upgrade pip wheel setuptools
 
 USER app
 RUN pip install --no-cache-dir numpy scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub flask werkzeug supervisor && \
