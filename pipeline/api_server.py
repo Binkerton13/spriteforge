@@ -35,11 +35,17 @@ app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size
 # Configuration
 WORKSPACE_ROOT = Path("/workspace")  # Default for pod
 if not WORKSPACE_ROOT.exists():
-    WORKSPACE_ROOT = Path.cwd().parent  # Fallback for local testing
+    # Fallback for local testing
+    # If running from workspace/pipeline, go up two levels
+    if Path.cwd().parent.name == "workspace":
+        WORKSPACE_ROOT = Path.cwd().parent.parent
+    else:
+        WORKSPACE_ROOT = Path.cwd().parent
 
 WEB_UI_DIR = Path(__file__).parent / "web_ui"
-UPLOAD_FOLDER = WEB_UI_DIR / "uploads"
-UPLOAD_FOLDER.mkdir(exist_ok=True)
+# Use persistent storage for uploads
+UPLOAD_FOLDER = WORKSPACE_ROOT / "uploads"
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 # Initialize Model Manager
 COMFYUI_ROOT = get_default_comfyui_path()
