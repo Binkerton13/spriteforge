@@ -49,6 +49,81 @@ def import_mesh(mesh_path):
     return bpy.context.selected_objects[0] if bpy.context.selected_objects else None
 
 
+def validate_and_clean_mesh(mesh_obj):
+    """
+    Validate mesh and automatically fix common issues
+    - Removes loose vertices
+    - Merges duplicate vertices
+    - Fixes non-manifold geometry
+    - Checks UV mapping
+    """
+    print("\n=== Mesh Validation & Cleanup ===")
+    
+    mesh = mesh_obj.data
+    bpy.context.view_layer.objects.active = mesh_obj
+    mesh_obj.select_set(True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    
+    # Check for non-manifold geometry
+    bpy.ops.mesh.select_all(action='DESELECT')
+    bpy.ops.mesh.select_non_manifold()
+    non_manifold_count = len([v for v in mesh.vertices if v.select])
+    if non_manifold_count > 0:
+        print(f"⚠ Non-manifold geometry detected: {non_manifold_count} vertices")
+        print("  Attempting to fix...")
+        bpy.ops.mesh.fill_holes(sides=0)
+        print("  ✓ Filled holes")
+    else:
+        print("✓ No non-manifold geometry")
+    
+    # Check for loose vertices
+    bpy.ops.mesh.select_all(action='DESELECT')
+    bpy.ops.mesh.select_loose()
+    loose_count = len([v for v in mesh.vertices if v.select])
+    if loose_count > 0:
+        print(f"⚠ Loose vertices detected: {loose_count}")
+        print("  Removing loose geometry...")
+        bpy.ops.mesh.delete(type='VERT')
+        print("  ✓ Removed loose vertices")
+    else:
+        print("✓ No loose vertices")
+    
+    # Remove duplicate vertices
+    bpy.ops.mesh.select_all(action='SELECT')
+    removed = bpy.ops.mesh.remove_doubles(threshold=0.0001)
+    if removed:
+        print(f"✓ Merged {removed} duplicate vertices")
+    else:
+        print("✓ No duplicate vertices")
+    
+    # Check UV mapping
+    if mesh.uv_layers.active:
+        uv_layer = mesh.uv_layers.active.data
+        uv_outside = sum(1 for uv in uv_layer if uv.uv.x < 0 or uv.uv.x > 1 or uv.uv.y < 0 or uv.uv.y > 1)
+        if uv_outside > 0:
+            print(f"⚠ {uv_outside} UV coordinates outside 0-1 range")
+        else:
+            print("✓ UV coordinates valid")
+    else:
+        print("⚠ No UV mapping found")
+    
+    # Recalculate normals
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.normals_make_consistent(inside=False)
+    print("✓ Recalculated normals")
+    
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # Print final mesh stats
+    print(f"\nFinal mesh stats:")
+    print(f"  Vertices: {len(mesh.vertices)}")
+    print(f"  Polygons: {len(mesh.polygons)}")
+    print(f"  Edges: {len(mesh.edges)}")
+    print("=== Mesh Validation Complete ===\n")
+    
+    return True
+
+
 def apply_unirig(mesh_obj, config):
     """
     Apply UniRig auto-rigging using subprocess calls to UniRig scripts
@@ -322,6 +397,9 @@ def main(project_path, config_path):
     if not mesh_obj:
         print("ERROR: Failed to import mesh")
         sys.exit(1)
+    
+    # Validate and clean mesh before rigging
+    validate_and_clean_mesh(mesh_obj)
     
     # Apply rigging pipeline
     armature = apply_unirig(mesh_obj, config)
