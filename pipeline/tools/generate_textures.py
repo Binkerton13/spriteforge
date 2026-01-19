@@ -76,10 +76,24 @@ def wait_for_completion(base_url, prompt_id, max_wait=600, check_interval=2):
     return False
 
 def load_workflow(workflow_path):
-    """Load ComfyUI workflow from JSON file"""
+    """Load ComfyUI workflow from JSON file and convert to API format"""
     try:
         with open(workflow_path, 'r') as f:
-            return json.load(f)
+            workflow = json.load(f)
+        
+        # Check if it's UI format (has 'nodes' array) and convert to API format
+        if "nodes" in workflow and isinstance(workflow["nodes"], list):
+            log("  Converting UI workflow format to API format...")
+            api_workflow = {}
+            for node in workflow["nodes"]:
+                node_id = str(node["id"])
+                api_workflow[node_id] = {
+                    "class_type": node["type"],
+                    "inputs": node.get("inputs", {})
+                }
+            return api_workflow
+        
+        return workflow
     except Exception as e:
         log(f"ERROR: Failed to load workflow {workflow_path}: {e}")
         return None
@@ -87,7 +101,7 @@ def load_workflow(workflow_path):
 def update_workflow_params(workflow, udim_tile, udim_config, checkpoint_name=None, uv_image_path=None):
     """Update workflow parameters with UDIM tile configuration
     
-    Node structure from texture_workflow.json:
+    Node structure from texture_workflow.json (API format):
     - Node 2: CheckpointLoaderSimple (base model)
     - Node 3: CLIPTextEncode (positive prompt)
     - Node 4: CLIPTextEncode (negative prompt)
@@ -96,43 +110,41 @@ def update_workflow_params(workflow, udim_tile, udim_config, checkpoint_name=Non
     - Node 1: LoadImage (UV layout)
     - Node 7: SaveImage (output)
     """
-    nodes = workflow.get("nodes", [])
-    
-    for node in nodes:
-        node_id = node.get("id")
-        node_type = node.get("type")
-        inputs = node.get("inputs", {})
+    # Workflow is now in API format: {"1": {"class_type": "...", "inputs": {...}}}
+    for node_id, node_data in workflow.items():
+        node_type = node_data.get("class_type")
+        inputs = node_data.get("inputs", {})
         
         # Node 3: Positive prompt
-        if node_id == 3 and node_type == "CLIPTextEncode":
+        if node_id == "3" and node_type == "CLIPTextEncode":
             inputs["text"] = udim_config.get("prompt", "3D game character texture, high quality")
             log(f"  Set positive prompt: {inputs['text'][:50]}...")
         
         # Node 4: Negative prompt
-        elif node_id == 4 and node_type == "CLIPTextEncode":
+        elif node_id == "4" and node_type == "CLIPTextEncode":
             inputs["text"] = udim_config.get("negative_prompt", "blurry, low quality, distorted")
             log(f"  Set negative prompt: {inputs['text'][:50]}...")
         
         # Node 5 & 11: KSamplers - update seed
-        elif node_id in [5, 11] and node_type == "KSampler":
+        elif node_id in ["5", "11"] and node_type == "KSampler":
             seed = udim_config.get("seed", 42)
             inputs["seed"] = seed
             log(f"  Set KSampler (node {node_id}) seed: {seed}")
         
         # Node 2: Base checkpoint
-        elif node_id == 2 and node_type == "CheckpointLoaderSimple":
+        elif node_id == "2" and node_type == "CheckpointLoaderSimple":
             if checkpoint_name:
                 inputs["ckpt_name"] = checkpoint_name
                 log(f"  Set base checkpoint: {checkpoint_name}")
         
         # Node 1: UV layout image
-        elif node_id == 1 and node_type == "LoadImage":
+        elif node_id == "1" and node_type == "LoadImage":
             if uv_image_path:
                 inputs["image"] = uv_image_path
                 log(f"  Set UV image: {uv_image_path}")
         
         # Node 7: SaveImage - set output filename with UDIM tile
-        elif node_id == 7 and node_type == "SaveImage":
+        elif node_id == "7" and node_type == "SaveImage":
             inputs["filename_prefix"] = f"texture_{udim_tile}"
             log(f"  Set output filename: texture_{udim_tile}")
     
@@ -147,12 +159,10 @@ def update_pbr_workflow_params(workflow, udim_tile, texture_type, albedo_path):
     - pbr_metallic.json: Node 2 (SaveImage) - no input needed
     - pbr_roughness.json: Node 1 (LoadImage), Node 4 (SaveImage)
     """
-    nodes = workflow.get("nodes", [])
-    
-    for node in nodes:
-        node_id = node.get("id")
-        node_type = node.get("type")
-        inputs = node.get("inputs", {})
+    # Workflow is now in API format: {"1": {"class_type": "...", "inputs": {...}}}
+    for node_id, node_data in workflow.items():
+        node_type = node_data.get("class_type")
+        inputs = node_data.get("inputs", {})
         
         # Update LoadImage node with albedo path
         if node_type == "LoadImage" and albedo_path:
