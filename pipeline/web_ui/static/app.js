@@ -1845,7 +1845,7 @@ async function runPipeline() {
     btn.textContent = '⏳ Starting Pipeline...';
     
     try {
-        const response = await fetch(`${API_BASE}/pipeline/run`, {
+        const response = await fetch(`${API_BASE}/api/pipeline/run`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
