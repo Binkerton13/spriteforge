@@ -94,7 +94,7 @@ def serve_pipeline_resources(filename):
 # ---------------------------------------------------------
 @app.route('/api/uploads/list', methods=['GET'])
 def list_uploads():
-    \"\"\"List all uploaded files\"\"\"
+    """List all uploaded files"""
     try:
         file_type = request.args.get('type')  # 'mesh', 'udim', 'pose_reference', etc.
         
