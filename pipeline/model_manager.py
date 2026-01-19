@@ -67,12 +67,13 @@ class ModelManager:
         Args:
             comfyui_root: Path to ComfyUI installation root
         """
-        self.comfyui_root = Path(comfyui_root)        log(f\"Initialized with ComfyUI root: {self.comfyui_root}\")
-        log(f\"  Root exists: {self.comfyui_root.exists()}\")
+        self.comfyui_root = Path(comfyui_root)
+        log(f"Initialized with ComfyUI root: {self.comfyui_root}")
+        log(f"  Root exists: {self.comfyui_root.exists()}")
         if self.comfyui_root.exists():
             models_dir = self.comfyui_root / 'models'
-            log(f\"  Models directory: {models_dir}\")
-            log(f\"  Models exists: {models_dir.exists()}\")
+            log(f"  Models directory: {models_dir}")
+            log(f"  Models exists: {models_dir.exists()}")
                 self.config_path = Path(__file__).parent / "model_config.json"
         self.load_config()
     
