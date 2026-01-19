@@ -1,5 +1,6 @@
 # Use PyTorch official image which has PyTorch + CUDA already installed (~5GB savings vs installing from scratch)
-FROM pytorch/pytorch:2.1.2-cuda12.1-cudnn8-runtime
+# ComfyUI requires PyTorch 2.4+ for torch.library.custom_op support
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 # Build-time flag: set to 0 for CPU-only test builds (local machines w/o NVIDIA)
 ARG USE_CUDA=1
