@@ -112,10 +112,6 @@ RUN curl -L -o /opt/comfyui/models/ipadapter/ip-adapter_sdxl.safetensors \
     "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors" || \
     echo "Warning: Failed to download IP-Adapter"
 
-USER root
-RUN chown -R app:app /opt/comfyui/models
-USER app
-
 # Add a lightweight start script that will run `git lfs pull` in any cloned repos
 # Place the start script in /usr/local/bin so a host mount of /workspace doesn't
 # hide or remove it at runtime.
