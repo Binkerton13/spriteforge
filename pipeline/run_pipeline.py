@@ -171,8 +171,8 @@ class PipelineOrchestrator:
             self.log("Error: Input directory does not exist")
             return False
         
-        # Check for mesh file
-        mesh_files = list(input_dir.glob("*.obj")) + list(input_dir.glob("*.fbx"))
+        # Check for mesh file (search recursively in subdirectories)
+        mesh_files = list(input_dir.rglob("*.obj")) + list(input_dir.rglob("*.fbx"))
         if not mesh_files:
             self.log("Error: No mesh files found in input directory")
             return False
