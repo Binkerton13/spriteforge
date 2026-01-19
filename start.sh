@@ -75,5 +75,5 @@ echo "  File Browser: Port ${FILE_BROWSER_PORT:-8080}"
 echo "  Pipeline GUI: Port ${PIPELINE_GUI_PORT:-7860}"
 echo "========================================"
 
-# Start supervisord from venv
-exec /opt/venv/bin/supervisord -c /etc/supervisord.conf
+# Start supervisord from system
+exec /usr/bin/supervisord -c /etc/supervisord.conf

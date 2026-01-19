@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     build-essential \
     unzip \
+    supervisor \
     libgl1 libglib2.0-0 libxrender1 libxext6 libsm6 \
     libx11-6 libxi6 libxrandr2 libxxf86vm1 libxfixes3 libxcursor1 libxinerama1 \
     && rm -rf /var/lib/apt/lists/*
@@ -41,7 +42,7 @@ RUN python -m venv --system-site-packages /opt/venv && \
     /opt/venv/bin/pip install --upgrade pip wheel setuptools
 
 USER app
-RUN pip install --no-cache-dir "numpy<2.0" scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub flask werkzeug supervisor && \
+RUN pip install --no-cache-dir "numpy<2.0" scipy pillow opencv-python matplotlib scikit-image scikit-learn trimesh pygltflib huggingface_hub flask werkzeug && \
     pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
 # Clone ComfyUI into /opt/comfyui so it's always available
