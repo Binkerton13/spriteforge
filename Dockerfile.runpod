@@ -138,7 +138,6 @@ CMD ["/bin/bash", "/usr/local/bin/start.sh"]
 
 # Ensure latest transformers is present — reinstall from GitHub after other
 # pip installs so requirements files do not downgrade it.
-USER root
 RUN ${VIRTUAL_ENV}/bin/pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git || true
-RUN chown -R app:app ${VIRTUAL_ENV} ${WORKSPACE} || true
+
 USER app
