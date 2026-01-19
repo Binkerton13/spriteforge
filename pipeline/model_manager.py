@@ -4,8 +4,13 @@ Model Manager for ComfyUI Models
 Handles listing, validation, and organization of ComfyUI models
 """
 import json
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional
+
+def log(msg):
+    """Print to stderr with flush for immediate output in supervisord logs"""
+    print(f"[ModelManager] {msg}", file=sys.stderr, flush=True)
 
 class ModelManager:
     """Manages ComfyUI model files and configuration"""
@@ -62,8 +67,13 @@ class ModelManager:
         Args:
             comfyui_root: Path to ComfyUI installation root
         """
-        self.comfyui_root = Path(comfyui_root)
-        self.config_path = Path(__file__).parent / "model_config.json"
+        self.comfyui_root = Path(comfyui_root)        log(f\"Initialized with ComfyUI root: {self.comfyui_root}\")
+        log(f\"  Root exists: {self.comfyui_root.exists()}\")
+        if self.comfyui_root.exists():
+            models_dir = self.comfyui_root / 'models'
+            log(f\"  Models directory: {models_dir}\")
+            log(f\"  Models exists: {models_dir.exists()}\")
+                self.config_path = Path(__file__).parent / "model_config.json"
         self.load_config()
     
     def load_config(self):
@@ -99,24 +109,35 @@ class ModelManager:
         """
         model_dir = self.get_model_path(model_type)
         
-        print(f"[ModelManager] Scanning {model_type} in: {model_dir}")
+        log(f"Scanning {model_type} in: {model_dir}")
+        log(f"  Directory exists: {model_dir.exists()}")
         
         if not model_dir.exists():
-            print(f"[ModelManager] Directory does not exist: {model_dir}")
+            log(f"  ERROR: Directory does not exist!")
             return []
         
+        # Log directory permissions
+        try:
+            log(f"  Directory readable: {model_dir.is_dir()}")
+            log(f"  Contents: {list(model_dir.iterdir())[:5]}")  # First 5 items
+        except Exception as e:
+            log(f"  ERROR reading directory: {e}")
+        
         extensions = self.MODEL_EXTENSIONS.get(model_type, [])
-        print(f"[ModelManager] Looking for extensions: {extensions}")
+        log(f"  Looking for extensions: {extensions}")
         models = []
         
         for ext in extensions:
             found_files = list(model_dir.rglob(f"*{ext}"))
-            print(f"[ModelManager] Found {len(found_files)} files with {ext} in {model_dir}")
+            log(f"  Found {len(found_files)} files with {ext}")
+            if found_files:
+                log(f"    Sample: {found_files[0].name if found_files else 'none'}")
+            
             # Use rglob to recursively search subdirectories (e.g., checkpoints/sdxl/)
             for model_file in found_files:
                 # Skip if it's not a file
                 if not model_file.is_file():
-                    print(f"[ModelManager] Skipping non-file: {model_file}")
+                    log(f"  Skipping non-file: {model_file}")
                     continue
                     
                 stat = model_file.stat()
@@ -124,6 +145,8 @@ class ModelManager:
                 rel_path = model_file.relative_to(model_dir)
                 
                 models.append({
+        log(f"Returning {len(models)} models for {model_type}")
+        
                     'name': str(rel_path),  # Include subdirectory in name
                     'path': str(model_file.relative_to(self.comfyui_root)),
                     'size': stat.st_size,

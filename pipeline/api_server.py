@@ -19,6 +19,7 @@ Usage:
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from werkzeug.utils import secure_filename
@@ -49,7 +50,11 @@ UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 # Initialize Model Manager
 COMFYUI_ROOT = get_default_comfyui_path()
+print(f\"[API Server] ComfyUI root path: {COMFYUI_ROOT}\", file=sys.stderr, flush=True)
+print(f\"[API Server] ComfyUI root exists: {COMFYUI_ROOT.exists()}\", file=sys.stderr, flush=True)
+
 model_manager = ModelManager(COMFYUI_ROOT)
+print(f\"[API Server] ModelManager initialized\", file=sys.stderr, flush=True)
 
 ALLOWED_MESH_EXTENSIONS = {'.fbx', '.obj', '.glb', '.gltf'}
 ALLOWED_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.tiff', '.exr'}
