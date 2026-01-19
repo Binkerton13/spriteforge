@@ -146,8 +146,6 @@ class ModelManager:
                 rel_path = model_file.relative_to(model_dir)
                 
                 models.append({
-        log(f"Returning {len(models)} models for {model_type}")
-        
                     'name': str(rel_path),  # Include subdirectory in name
                     'path': str(model_file.relative_to(self.comfyui_root)),
                     'size': stat.st_size,
@@ -156,6 +154,7 @@ class ModelManager:
                     'type': model_type
                 })
         
+        log(f"Returning {len(models)} models for {model_type}")
         # Sort by name
         models.sort(key=lambda x: x['name'].lower())
         
