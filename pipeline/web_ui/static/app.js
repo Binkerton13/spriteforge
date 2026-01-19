@@ -322,6 +322,16 @@ function setupModel(model, filename) {
                 const hasNormals = child.geometry.attributes.normal !== undefined;
                 console.log('  Has normals:', hasNormals);
                 
+                // Check UV mapping
+                const hasUV = child.geometry.attributes.uv !== undefined;
+                console.log('  Has UV mapping:', hasUV);
+                if (hasUV) {
+                    const uvCount = child.geometry.attributes.uv.count;
+                    console.log('  UV coordinates:', uvCount);
+                } else {
+                    console.log('  ⚠ WARNING: No UV mapping found!');
+                }
+                
                 if (!hasNormals) {
                     child.geometry.computeVertexNormals();
                     console.log('  Computed vertex normals');

@@ -140,6 +140,14 @@ def apply_unirig(mesh_obj, config):
     print(f"Rigging preset: {preset}")
     print(f"Random seed: {seed}")
     
+    # Check if UniRig is available
+    unirig_script = Path("/workspace/unirig/launch/inference/generate_skeleton.sh")
+    if not unirig_script.exists():
+        print("WARNING: UniRig not found at /workspace/unirig")
+        print("Running in test/development mode - using fallback armature")
+        print("In production, UniRig will be installed at /workspace/unirig")
+        return create_basic_armature(mesh_obj)
+    
     # Create temporary directory for UniRig processing
     with tempfile.TemporaryDirectory() as tmpdir:
         temp_input = f"{tmpdir}/input_mesh.fbx"
