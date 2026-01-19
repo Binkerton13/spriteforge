@@ -42,6 +42,13 @@ def queue_prompt(base_url, prompt):
         return response.json()
     except requests.exceptions.RequestException as e:
         log(f"ERROR: Failed to queue prompt: {e}")
+        # Try to get detailed error message from response
+        try:
+            if hasattr(e, 'response') and e.response is not None:
+                error_detail = e.response.text
+                log(f"ERROR: Server response: {error_detail[:500]}")
+        except:
+            pass
         return None
 
 def get_history(base_url, prompt_id):
