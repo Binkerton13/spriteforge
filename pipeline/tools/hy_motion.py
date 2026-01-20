@@ -30,6 +30,9 @@ def generate_animation(project_path: Path, config: dict):
     anim_config = config.get('animation', {})
     selected_animations = anim_config.get('selected_animations', [])
     
+    print(f"\nAnimation config: {anim_config}")
+    print(f"Selected animations from config: {selected_animations}")
+    
     if not selected_animations:
         print("WARNING: No animations selected in config")
         print("Using default animation: idle")
@@ -65,9 +68,12 @@ def generate_animation(project_path: Path, config: dict):
             print("Running in test/development mode - creating placeholder")
             print("In production, HY-Motion will be installed at /workspace/hy-motion")
             
-            # Create placeholder FBX
-            output_path.touch()
+            # Create placeholder FBX by copying the rigged mesh
+            # This ensures it has proper structure and isn't 0 bytes
+            import shutil
+            shutil.copy2(rigged_mesh, output_path)
             print(f"[✔] Created placeholder animation: {output_path.name}")
+            print(f"    (Copied from rigged mesh - no actual animation data)")
             continue
         
         cmd = [

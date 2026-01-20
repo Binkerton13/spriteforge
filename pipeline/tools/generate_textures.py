@@ -135,12 +135,10 @@ def update_workflow_params(workflow, udim_tile, udim_config, checkpoint_name=Non
     """Update workflow parameters with UDIM tile configuration
     
     Node structure from texture_workflow.json (API format):
-    - Node 2: CheckpointLoaderSimple (base model)
-    - Node 3: CLIPTextEncode (positive prompt)
-    - Node 4: CLIPTextEncode (negative prompt)
-    - Node 5: KSampler (primary sampler, seed)
-    - Node 11: KSampler (refiner sampler, seed)
-    - Node 1: LoadImage (UV layout)
+    - Node 1: CheckpointLoaderSimple (base model)
+    - Node 2: CLIPTextEncode (positive prompt)
+    - Node 3: CLIPTextEncode (negative prompt)
+    - Node 5: KSampler (seed)
     - Node 7: SaveImage (output)
     """
     # Workflow is now in API format: {"1": {"class_type": "...", "inputs": {...}}}
@@ -148,33 +146,27 @@ def update_workflow_params(workflow, udim_tile, udim_config, checkpoint_name=Non
         node_type = node_data.get("class_type")
         inputs = node_data.get("inputs", {})
         
-        # Node 3: Positive prompt
-        if node_id == "3" and node_type == "CLIPTextEncode":
+        # Node 2: Positive prompt
+        if node_id == "2" and node_type == "CLIPTextEncode":
             inputs["text"] = udim_config.get("prompt", "3D game character texture, high quality")
             log(f"  Set positive prompt: {inputs['text'][:50]}...")
         
-        # Node 4: Negative prompt
-        elif node_id == "4" and node_type == "CLIPTextEncode":
+        # Node 3: Negative prompt
+        elif node_id == "3" and node_type == "CLIPTextEncode":
             inputs["text"] = udim_config.get("negative_prompt", "blurry, low quality, distorted")
             log(f"  Set negative prompt: {inputs['text'][:50]}...")
         
-        # Node 5 & 11: KSamplers - update seed
-        elif node_id in ["5", "11"] and node_type == "KSampler":
+        # Node 5: KSampler - update seed
+        elif node_id == "5" and node_type == "KSampler":
             seed = udim_config.get("seed", 42)
             inputs["seed"] = seed
             log(f"  Set KSampler (node {node_id}) seed: {seed}")
         
-        # Node 2: Base checkpoint
-        elif node_id == "2" and node_type == "CheckpointLoaderSimple":
+        # Node 1: Base checkpoint
+        elif node_id == "1" and node_type == "CheckpointLoaderSimple":
             if checkpoint_name:
                 inputs["ckpt_name"] = checkpoint_name
                 log(f"  Set base checkpoint: {checkpoint_name}")
-        
-        # Node 1: UV layout image
-        elif node_id == "1" and node_type == "LoadImage":
-            if uv_image_path:
-                inputs["image"] = uv_image_path
-                log(f"  Set UV image: {uv_image_path}")
         
         # Node 7: SaveImage - set output filename with UDIM tile
         elif node_id == "7" and node_type == "SaveImage":
