@@ -10,11 +10,18 @@ if [ -L "/workspace/ComfyUI" ]; then
   rm /workspace/ComfyUI
 fi
 
-# Setup persistent ComfyUI models directory
+# Setup persistent ComfyUI directories
 if [ ! -d "/workspace/ComfyUI/models" ]; then
   echo "Creating persistent ComfyUI models directory structure..."
   mkdir -p /workspace/ComfyUI/models/{checkpoints,loras,vae,controlnet,ipadapter,embeddings,upscale_models,clip_vision}
   chown -R app:app /workspace/ComfyUI || true
+fi
+
+# Create custom_nodes directory if it doesn't exist
+if [ ! -d "/workspace/custom_nodes" ]; then
+  echo "Creating persistent custom_nodes directory..."
+  mkdir -p /workspace/custom_nodes
+  chown -R app:app /workspace/custom_nodes || true
 fi
 
 # Symlink ComfyUI models directory to persistent storage
@@ -27,6 +34,15 @@ if [ ! -L "/opt/comfyui/models" ] && [ -d "/opt/comfyui/models" ]; then
     rm -rf /opt/comfyui/models
   fi
   ln -s /workspace/ComfyUI/models /opt/comfyui/models
+fi
+
+# Ensure custom_nodes symlink exists
+if [ ! -L "/opt/comfyui/custom_nodes" ]; then
+  echo "Linking ComfyUI custom_nodes to persistent storage..."
+  if [ -d "/opt/comfyui/custom_nodes" ]; then
+    rm -rf /opt/comfyui/custom_nodes
+  fi
+  ln -s /workspace/custom_nodes /opt/comfyui/custom_nodes
 fi
 
 # Copy pipeline files to workspace if not already there
