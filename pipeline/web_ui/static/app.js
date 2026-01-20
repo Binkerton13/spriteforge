@@ -1434,6 +1434,14 @@ function closeModal() {
     document.getElementById('newProjectModal').classList.remove('active');
 }
 
+function showComfyUISetup() {
+    document.getElementById('comfyUISetupModal').style.display = 'flex';
+}
+
+function closeComfyUISetup() {
+    document.getElementById('comfyUISetupModal').style.display = 'none';
+}
+
 async function createNewProject() {
     const projectName = document.getElementById('newProjectName').value.trim();
     

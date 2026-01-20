@@ -22,6 +22,7 @@
                         <option value="">Select Project...</option>
                     </select>
                     <button class="btn btn-primary" onclick="showNewProjectDialog()">+ New Project</button>
+                    <button class="btn btn-secondary" onclick="showComfyUISetup()" title="View required ComfyUI setup">⚙️ ComfyUI Setup</button>
                     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
                         <span id="themeIcon">🌙</span>
                     </button>
@@ -651,6 +652,287 @@
                     <button class="btn btn-secondary" onclick="autoSelectWorkflowModels()">🔄 Auto-Select</button>
                     <button class="btn btn-primary" onclick="saveWorkflowModelSelections()">💾 Save Selections</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ComfyUI Setup Requirements Modal -->
+    <div id="comfyUISetupModal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>⚙️ ComfyUI Setup Requirements</h2>
+                <button class="close-btn" onclick="closeComfyUISetup()">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Custom Nodes Section -->
+                <div class="setup-section">
+                    <h3>📦 Required Custom Nodes</h3>
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                        Install via ComfyUI Manager or manually. All nodes are free and open-source.
+                    </p>
+                    
+                    <div class="node-list">
+                        <div class="node-item">
+                            <div class="node-header">
+                                <span class="node-number">1</span>
+                                <strong>ComfyUI-AnimateDiff-Evolved</strong>
+                                <span class="node-badge">Required</span>
+                            </div>
+                            <p class="node-description">Temporal consistency across animation frames - prevents flickering</p>
+                            <div class="node-details">
+                                <div class="node-info">
+                                    <strong>Manager:</strong> Search "AnimateDiff-Evolved" in ComfyUI Manager
+                                </div>
+                                <div class="node-info">
+                                    <strong>Manual:</strong> <code>git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="node-item">
+                            <div class="node-header">
+                                <span class="node-number">2</span>
+                                <strong>ComfyUI_IPAdapter_plus</strong>
+                                <span class="node-badge">Required</span>
+                            </div>
+                            <p class="node-description">Character consistency from reference images - maintains style</p>
+                            <div class="node-details">
+                                <div class="node-info">
+                                    <strong>Manager:</strong> Search "IPAdapter" in ComfyUI Manager
+                                </div>
+                                <div class="node-info">
+                                    <strong>Manual:</strong> <code>git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="node-item">
+                            <div class="node-header">
+                                <span class="node-number">3</span>
+                                <strong>comfyui_controlnet_aux</strong>
+                                <span class="node-badge">Required</span>
+                            </div>
+                            <p class="node-description">ControlNet preprocessors - OpenPose, Depth, Normal, Canny maps</p>
+                            <div class="node-details">
+                                <div class="node-info">
+                                    <strong>Manager:</strong> Search "controlnet_aux" in ComfyUI Manager
+                                </div>
+                                <div class="node-info">
+                                    <strong>Manual:</strong> <code>git clone https://github.com/Fannovel16/comfyui_controlnet_aux.git</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="node-item">
+                            <div class="node-header">
+                                <span class="node-number">4</span>
+                                <strong>ComfyUI-Advanced-ControlNet</strong>
+                                <span class="node-badge">Required</span>
+                            </div>
+                            <p class="node-description">Advanced ControlNet features - weight scheduling, multi-ControlNet</p>
+                            <div class="node-details">
+                                <div class="node-info">
+                                    <strong>Manager:</strong> Search "Advanced-ControlNet" in ComfyUI Manager
+                                </div>
+                                <div class="node-info">
+                                    <strong>Manual:</strong> <code>git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="node-item">
+                            <div class="node-header">
+                                <span class="node-number">5</span>
+                                <strong>ComfyUI_essentials</strong>
+                                <span class="node-badge">Required</span>
+                            </div>
+                            <p class="node-description">Background removal (RemBG node) + utility nodes</p>
+                            <div class="node-details">
+                                <div class="node-info">
+                                    <strong>Manager:</strong> Search "essentials" in ComfyUI Manager
+                                </div>
+                                <div class="node-info">
+                                    <strong>Manual:</strong> <code>git clone https://github.com/cubiq/ComfyUI_essentials.git</code>
+                                </div>
+                                <div class="node-info">
+                                    <strong>Alternative:</strong> <code>pip install rembg[gpu]</code> (standalone package)
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="node-item">
+                            <div class="node-header">
+                                <span class="node-number">6</span>
+                                <strong>ComfyUI-Frame-Interpolation</strong>
+                                <span class="node-badge optional">Optional</span>
+                            </div>
+                            <p class="node-description">Frame interpolation for smoother animations (60fps from 30fps, etc.)</p>
+                            <div class="node-details">
+                                <div class="node-info">
+                                    <strong>Manager:</strong> Search "Frame Interpolation" in ComfyUI Manager
+                                </div>
+                                <div class="node-info">
+                                    <strong>Manual:</strong> <code>git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Models Section -->
+                <div class="setup-section">
+                    <h3>🤖 Required AI Models</h3>
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                        Download models to appropriate ComfyUI directories. Total storage: ~20 GB
+                    </p>
+                    
+                    <div class="model-category">
+                        <h4>AnimateDiff Models</h4>
+                        <p class="model-path"><strong>Directory:</strong> <code>ComfyUI/models/animatediff_models/</code></p>
+                        <div class="model-item">
+                            <div class="model-name">v3_sd15_mm.ckpt</div>
+                            <div class="model-size">1.7 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/guoyww/animatediff/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Motion model for temporal consistency</p>
+                        </div>
+                    </div>
+                    
+                    <div class="model-category">
+                        <h4>IP-Adapter Models</h4>
+                        <p class="model-path"><strong>Directory:</strong> <code>ComfyUI/models/ipadapter/</code></p>
+                        <div class="model-item">
+                            <div class="model-name">ip-adapter-faceid-plusv2_sd15.bin</div>
+                            <div class="model-size">340 MB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/h94/IP-Adapter-FaceID/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Character consistency from reference images</p>
+                        </div>
+                        
+                        <p class="model-path" style="margin-top: 1rem;"><strong>Also needed in:</strong> <code>ComfyUI/models/clip_vision/</code></p>
+                        <div class="model-item">
+                            <div class="model-name">CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors</div>
+                            <div class="model-size">3.69 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/h94/IP-Adapter/tree/main/models/image_encoder" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Image encoder for IP-Adapter</p>
+                        </div>
+                    </div>
+                    
+                    <div class="model-category">
+                        <h4>ControlNet Models</h4>
+                        <p class="model-path"><strong>Directory:</strong> <code>ComfyUI/models/controlnet/</code></p>
+                        
+                        <div class="model-item">
+                            <div class="model-name">control_v11p_sd15_openpose.pth</div>
+                            <div class="model-size">1.45 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/lllyasviel/ControlNet-v1-1/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Pose preservation - weight 0.9</p>
+                        </div>
+                        
+                        <div class="model-item">
+                            <div class="model-name">control_v11f1p_sd15_depth.pth</div>
+                            <div class="model-size">1.45 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/lllyasviel/ControlNet-v1-1/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Depth map guidance - weight 0.7</p>
+                        </div>
+                        
+                        <div class="model-item">
+                            <div class="model-name">control_v11p_sd15_normalbae.pth</div>
+                            <div class="model-size">1.45 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/lllyasviel/ControlNet-v1-1/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Normal map guidance - weight 0.5</p>
+                        </div>
+                        
+                        <div class="model-item">
+                            <div class="model-name">control_v11p_sd15_canny.pth</div>
+                            <div class="model-size">1.45 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/lllyasviel/ControlNet-v1-1/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Edge detection guidance - weight 0.4</p>
+                        </div>
+                    </div>
+                    
+                    <div class="model-category">
+                        <h4>Base Checkpoints (Choose based on quality preset)</h4>
+                        <p class="model-path"><strong>Directory:</strong> <code>ComfyUI/models/checkpoints/</code></p>
+                        
+                        <div class="model-item">
+                            <div class="model-name">sd_xl_turbo_1.0_fp16.safetensors</div>
+                            <div class="model-size">6.94 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/stabilityai/sdxl-turbo/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Fast Prototype quality preset (~2-3 sec/frame)</p>
+                        </div>
+                        
+                        <div class="model-item">
+                            <div class="model-name">sdxl_lightning_4step.safetensors</div>
+                            <div class="model-size">6.94 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/ByteDance/SDXL-Lightning/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">Balanced quality preset (~5-8 sec/frame) - Recommended</p>
+                        </div>
+                        
+                        <div class="model-item">
+                            <div class="model-name">sd_xl_base_1.0.safetensors</div>
+                            <div class="model-size">6.94 GB</div>
+                            <div class="model-link">
+                                <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/tree/main" target="_blank">Download from HuggingFace</a>
+                            </div>
+                            <p class="model-description">High/Ultra quality presets (~15-40 sec/frame)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Reference -->
+                <div class="setup-section">
+                    <h3>📋 Quick Setup Checklist</h3>
+                    <ul class="checklist">
+                        <li>✅ Install ComfyUI Manager (if not installed)</li>
+                        <li>✅ Install 5 required custom nodes + 1 optional</li>
+                        <li>✅ Download AnimateDiff motion model (1.7 GB)</li>
+                        <li>✅ Download IP-Adapter models (4 GB total)</li>
+                        <li>✅ Download ControlNet models (6 GB - all 4 models)</li>
+                        <li>✅ Download at least one base checkpoint (7 GB)</li>
+                        <li>✅ Restart ComfyUI after installing nodes</li>
+                        <li>✅ Test workflow with sample project</li>
+                    </ul>
+                    
+                    <div class="setup-note">
+                        <strong>💡 Tip:</strong> You can start with just SDXL-Lightning checkpoint for balanced quality/speed. 
+                        Add SDXL-Turbo for fast prototyping or SDXL 1.0 for maximum quality later.
+                    </div>
+                    
+                    <div class="setup-note" style="margin-top: 1rem;">
+                        <strong>⚠️ VRAM Requirements:</strong>
+                        <ul>
+                            <li>Fast Prototype: ~4 GB VRAM</li>
+                            <li>Balanced: ~6 GB VRAM</li>
+                            <li>High Quality: ~8 GB VRAM</li>
+                            <li>Ultra Quality: ~12 GB VRAM</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="window.open('https://github.com/Binkerton13/runpod-3d-ai-template/blob/main/COMFYUI_INSTALLATION.md', '_blank')">
+                    📖 Full Documentation
+                </button>
+                <button class="btn btn-primary" onclick="closeComfyUISetup()">Close</button>
             </div>
         </div>
     </div>
