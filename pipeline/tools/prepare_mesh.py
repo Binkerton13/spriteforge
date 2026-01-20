@@ -66,10 +66,13 @@ def create_uv_unwrapping(mesh_obj, project_path=None):
     uv_layout_applied = False
     if project_path:
         uv_layout_dir = project_path / "0_input" / "uv_layouts"
+        print(f"Checking for UV layouts in: {uv_layout_dir}")
+        print(f"  Directory exists: {uv_layout_dir.exists()}")
         if uv_layout_dir.exists():
             uv_images = list(uv_layout_dir.glob("*.png")) + list(uv_layout_dir.glob("*.jpg"))
+            print(f"  Found {len(uv_images)} image files")
             if uv_images:
-                print(f"Found {len(uv_images)} uploaded UV layout(s) in {uv_layout_dir}")
+                print(f"✓ Found {len(uv_images)} uploaded UV layout(s):")
                 # User has uploaded UDIM UV layouts - use the existing UVs from the mesh
                 if mesh_obj.data.uv_layers:
                     print(f"✓ Using existing UV map from mesh: {mesh_obj.data.uv_layers.active.name}")
@@ -190,8 +193,17 @@ def main():
     input_mesh = Path(args[0])
     output_mesh = Path(args[1])
     
-    # Get project path (parent directories: 0_input/meshes -> 0_input -> project_root)
-    project_path = input_mesh.parent.parent
+    # Get project path
+    # Input:  /workspace/TestRun/0_input/meshes/character_clean.fbx
+    # Output: /workspace/TestRun/0_input/character_clean_prepared.fbx
+    # Project should be: /workspace/TestRun
+    
+    # Go up from meshes -> 0_input -> project_root
+    if input_mesh.parent.name == 'meshes':
+        project_path = input_mesh.parent.parent.parent
+    else:
+        # Fallback: mesh directly in 0_input
+        project_path = input_mesh.parent.parent
     
     print("="*80)
     print("MESH PREPARATION")
@@ -199,6 +211,7 @@ def main():
     print(f"Input:   {input_mesh}")
     print(f"Output:  {output_mesh}")
     print(f"Project: {project_path}")
+    print(f"UV layout dir: {project_path / '0_input' / 'uv_layouts'}")
     print("")
     
     if not input_mesh.exists():
