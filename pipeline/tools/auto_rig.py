@@ -18,6 +18,9 @@ blender --background --python auto_rig.py -- <project_path> <config_path>
 
 import sys
 import json
+import os
+import subprocess
+import tempfile
 from pathlib import Path
 
 try:
@@ -227,10 +230,8 @@ def apply_unirig(mesh_obj, config):
         # Step 3: Merge rigged result back with original mesh
         print("Merging UniRig results...")
         merge_cmd = [
-            "bash", "/workspace/unirig/launch/inference/merge.sh",
-            "--source", temp_skin,
-            "--target", temp_input,
-            "--output", temp_output
+            "bash", "-c",
+            f"cd /workspace/unirig && bash launch/inference/merge.sh --source {temp_skin} --target {temp_input} --output {temp_output}"
         ]
         
         try:
@@ -245,6 +246,8 @@ def apply_unirig(mesh_obj, config):
             if not os.path.exists(temp_output):
                 print(f"ERROR: Merge completed but output file not created: {temp_output}")
                 print(f"Temp directory contents: {os.listdir(tmpdir)}")
+                print("Falling back to basic armature")
+                return create_basic_armature(mesh_obj)
                 print("Falling back to basic armature")
                 return create_basic_armature(mesh_obj)
             
