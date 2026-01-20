@@ -1127,14 +1127,207 @@ async function loadProject(projectName) {
             // Load animation overrides for this project
             await loadAnimationOverrides();
             
-            // Load previously uploaded mesh files
+            // Load previously uploaded files
             await loadUploadedMeshes();
+            await loadUploadedUDIMs();
+            await loadUploadedReferences();
             
             setStatus(`Loaded project: ${projectName}`);
         }
     } catch (error) {
         showError('Failed to load project');
     }
+}
+
+async function loadUploadedMeshes() {
+    if (!currentProject) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/files/${currentProject}/mesh`);
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.files.length > 0) {
+            const select = document.getElementById('previousMeshSelect');
+            const group = document.getElementById('previousMeshGroup');
+            
+            // Clear existing options except first
+            select.innerHTML = '<option value="">-- Choose file --</option>';
+            
+            // Add uploaded files
+            data.files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file.name;
+                option.textContent = `${file.name} (${formatFileSize(file.size)})`;
+                select.appendChild(option);
+            });
+            
+            group.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Failed to load uploaded meshes:', error);
+    }
+}
+
+async function loadUploadedUDIMs() {
+    if (!currentProject) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/files/${currentProject}/udim`);
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.files.length > 0) {
+            const listDiv = document.getElementById('udimList');
+            listDiv.innerHTML = '<div class="uploaded-files-header">Uploaded UDIM tiles:</div>';
+            
+            data.files.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'uploaded-file-item';
+                fileItem.innerHTML = `
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">${formatFileSize(file.size)}</span>
+                    <button class="btn-icon btn-danger" onclick="deleteFile('${currentProject}', 'udim', '${file.name}')" title="Delete file">🗑️</button>
+                `;
+                listDiv.appendChild(fileItem);
+            });
+        }
+    } catch (error) {
+        console.error('Failed to load uploaded UDIMs:', error);
+    }
+}
+
+async function loadUploadedReferences() {
+    if (!currentProject) return;
+    
+    try {
+        // Load style references
+        const styleResponse = await fetch(`${API_BASE}/api/files/${currentProject}/style_reference`);
+        const styleData = await styleResponse.json();
+        
+        if (styleData.status === 'success' && styleData.files.length > 0) {
+            const listDiv = document.getElementById('styleRefList');
+            if (listDiv) {
+                listDiv.innerHTML = '<div class="uploaded-files-header">Style references:</div>';
+                
+                styleData.files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'uploaded-file-item';
+                    fileItem.innerHTML = `
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatFileSize(file.size)}</span>
+                        <button class="btn-icon btn-danger" onclick="deleteFile('${currentProject}', 'style_reference', '${file.name}')" title="Delete file">🗑️</button>
+                    `;
+                    listDiv.appendChild(fileItem);
+                });
+            }
+        }
+        
+        // Load pose references
+        const poseResponse = await fetch(`${API_BASE}/api/files/${currentProject}/pose_reference`);
+        const poseData = await poseResponse.json();
+        
+        if (poseData.status === 'success' && poseData.files.length > 0) {
+            const listDiv = document.getElementById('poseRefList');
+            if (listDiv) {
+                listDiv.innerHTML = '<div class="uploaded-files-header">Pose references:</div>';
+                
+                poseData.files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'uploaded-file-item';
+                    fileItem.innerHTML = `
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatFileSize(file.size)}</span>
+                        <button class="btn-icon btn-danger" onclick="deleteFile('${currentProject}', 'pose_reference', '${file.name}')" title="Delete file">🗑️</button>
+                    `;
+                    listDiv.appendChild(fileItem);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load uploaded references:', error);
+    }
+}
+
+function selectPreviousMesh(filename) {
+    if (!filename || !currentProject) return;
+    
+    // Update mesh info display
+    const meshInfo = document.getElementById('meshInfo');
+    meshInfo.innerHTML = `<strong>Selected:</strong> ${filename}`;
+    meshInfo.style.display = 'block';
+    
+    // Show mesh type selector
+    document.getElementById('meshTypeGroup').style.display = 'block';
+    
+    // Try to load and display the mesh in 3D viewer
+    loadPreviousMeshInViewer(filename);
+}
+
+async function loadPreviousMeshInViewer(filename) {
+    if (!currentProject) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/files/${currentProject}/mesh/${filename}`);
+        const blob = await response.blob();
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (filename.toLowerCase().endsWith('.fbx')) {
+                const loader = new THREE.FBXLoader();
+                try {
+                    const model = loader.parse(e.target.result, '');
+                    setupModel(model);
+                } catch (error) {
+                    console.error('FBX parse error:', error);
+                    showError('Failed to load FBX file');
+                }
+            } else if (filename.toLowerCase().endsWith('.obj')) {
+                const loader = new THREE.OBJLoader();
+                const model = loader.parse(reader.result);
+                setupModel(model);
+            }
+        };
+        
+        if (filename.toLowerCase().endsWith('.fbx')) {
+            reader.readAsArrayBuffer(blob);
+        } else {
+            reader.readAsText(blob);
+        }
+    } catch (error) {
+        console.error('Failed to load previous mesh:', error);
+        showError('Failed to load mesh file');
+    }
+}
+
+async function deleteFile(projectName, fileType, filename) {
+    if (!confirm(`Delete ${filename}?`)) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/files/${projectName}/${fileType}/${filename}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            showSuccess(`Deleted: ${filename}`);
+            // Reload file lists
+            await loadUploadedMeshes();
+            await loadUploadedUDIMs();
+            await loadUploadedReferences();
+        } else {
+            showError(data.message);
+        }
+    } catch (error) {
+        showError('Failed to delete file');
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 function loadConfigIntoForm(config) {
@@ -2433,3 +2626,155 @@ async function validateModels() {
 document.addEventListener('DOMContentLoaded', () => {
     validateModels();
 });
+
+// ===================================
+// Output Browser & Project Export
+// ===================================
+
+async function showOutputBrowser() {
+    if (!currentProject) {
+        showError('No project selected');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/projects/${currentProject}/outputs`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            displayOutputs(data.outputs);
+            document.getElementById('outputBrowserModal').style.display = 'flex';
+        } else {
+            showError(data.message);
+        }
+    } catch (error) {
+        showError('Failed to load outputs');
+    }
+}
+
+function displayOutputs(outputs) {
+    // Textures
+    const texturesDiv = document.getElementById('outputTextures');
+    texturesDiv.innerHTML = outputs.textures.length > 0
+        ? outputs.textures.map(file => createOutputFileItem(file)).join('')
+        : '<p class="no-files">No textures generated yet</p>';
+    
+    // Rigging
+    const riggingDiv = document.getElementById('outputRigging');
+    riggingDiv.innerHTML = outputs.rigging.length > 0
+        ? outputs.rigging.map(file => createOutputFileItem(file)).join('')
+        : '<p class="no-files">No rigged models yet</p>';
+    
+    // Animation
+    const animDiv = document.getElementById('outputAnimation');
+    animDiv.innerHTML = outputs.animation.length > 0
+        ? outputs.animation.map(file => createOutputFileItem(file)).join('')
+        : '<p class="no-files">No animations yet</p>';
+    
+    // Export
+    const exportDiv = document.getElementById('outputExport');
+    exportDiv.innerHTML = outputs.export.length > 0
+        ? outputs.export.map(file => createOutputFileItem(file)).join('')
+        : '<p class="no-files">No export packages yet</p>';
+    
+    // Sprites
+    const spritesDiv = document.getElementById('outputSprites');
+    spritesDiv.innerHTML = outputs.sprites.length > 0
+        ? outputs.sprites.map(file => createOutputFileItem(file)).join('')
+        : '<p class="no-files">No sprites generated yet</p>';
+}
+
+function createOutputFileItem(file) {
+    return `
+        <div class="output-file-item">
+            <div class="output-file-info">
+                <span class="file-name">${file.name}</span>
+                <span class="file-size">${formatFileSize(file.size)}</span>
+            </div>
+            <button class="btn-icon btn-primary" onclick="downloadOutput('${currentProject}', '${file.path}')" title="Download file">
+                ⬇️
+            </button>
+        </div>
+    `;
+}
+
+function downloadOutput(projectName, filePath) {
+    window.open(`${API_BASE}/api/projects/${projectName}/outputs/${encodeURIComponent(filePath)}`, '_blank');
+}
+
+function closeOutputBrowser() {
+    document.getElementById('outputBrowserModal').style.display = 'none';
+}
+
+async function exportProject() {
+    if (!currentProject) {
+        showError('No project selected');
+        return;
+    }
+    
+    if (!confirm(`Export project "${currentProject}" as zip file?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/projects/${currentProject}/export`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            // Trigger download
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentProject}_backup.zip`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showSuccess('Project exported successfully');
+        } else {
+            const data = await response.json();
+            showError(data.message || 'Export failed');
+        }
+    } catch (error) {
+        showError('Failed to export project');
+    }
+}
+
+// Update runPipeline to support force_rerun
+async function runPipeline(forceRerun = false) {
+    if (!currentProject) {
+        showError('No project selected');
+        return;
+    }
+    
+    // Save config first
+    await saveConfig();
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/pipeline/run`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project_name: currentProject,
+                force_rerun: forceRerun
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'started') {
+            showSuccess(data.message);
+            document.getElementById('pipelineStagesContainer').style.display = 'block';
+            
+            // Start polling for status
+            startStatusPolling();
+        } else {
+            showError(data.error || 'Failed to start pipeline');
+        }
+    } catch (error) {
+        showError('Error starting pipeline');
+    }
+}

@@ -252,13 +252,64 @@ def list_files(project_name, file_type):
                 files.append({
                     "name": file_path.name,
                     "size": file_path.stat().st_size,
-                    "path": str(file_path)
+                    "path": str(file_path.relative_to(project_path))
                 })
         
         return jsonify({
             "status": "success",
             "files": files
         })
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+@app.route("/api/files/<project_name>/<file_type>/<filename>", methods=["GET", "DELETE"])
+def file_operations(project_name, file_type, filename):
+    """Download or delete a specific file"""
+    try:
+        project_path = WORKSPACE_ROOT / project_name
+        filename = secure_filename(filename)
+        
+        # Determine folder based on file type
+        if file_type == 'mesh':
+            folder = project_path / "0_input/meshes"
+        elif file_type == 'udim':
+            folder = project_path / "0_input/uv_layouts"
+        elif file_type == 'style_reference':
+            folder = project_path / "0_input/reference/style_images"
+        elif file_type == 'pose_reference':
+            folder = project_path / "0_input/reference/motion_reference"
+        elif file_type == 'reference':
+            folder = project_path / "0_input/reference"
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid file type"
+            }), 400
+        
+        file_path = folder / filename
+        
+        if not file_path.exists():
+            return jsonify({
+                "status": "error",
+                "message": f"File not found: {filename}"
+            }), 404
+        
+        if request.method == 'GET':
+            # Download file
+            return send_file(str(file_path), as_attachment=True, download_name=filename)
+        
+        elif request.method == 'DELETE':
+            # Delete file
+            file_path.unlink()
+            return jsonify({
+                "status": "success",
+                "message": f"File deleted: {filename}"
+            })
         
     except Exception as e:
         return jsonify({
@@ -680,6 +731,7 @@ def run_pipeline():
     """Execute the pipeline for a project"""
     data = request.get_json()
     project_name = data.get('project_name')
+    force_rerun = data.get('force_rerun', False)
     
     if not project_name:
         return jsonify({'error': 'Project name is required'}), 400
@@ -695,9 +747,14 @@ def run_pipeline():
     pipeline_script = Path(__file__).parent / "run_pipeline.py"
     
     try:
+        # Build command with force_rerun flag if needed
+        cmd = [sys.executable, str(pipeline_script), str(project_path)]
+        if force_rerun:
+            cmd.append('--force-rerun')
+        
         # Run pipeline in background
         process = subprocess.Popen(
-            [sys.executable, str(pipeline_script), str(project_path)],
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -707,7 +764,8 @@ def run_pipeline():
             'status': 'started',
             'project': project_name,
             'pid': process.pid,
-            'message': 'Pipeline execution started'
+            'force_rerun': force_rerun,
+            'message': 'Pipeline execution started' + (' (force rerun)' if force_rerun else '')
         })
     
     except Exception as e:
@@ -937,6 +995,173 @@ def download_model(model_type, filename):
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ---------------------------------------------------------
+# Output Browser & Project Export Routes
+# ---------------------------------------------------------
+
+@app.route("/api/projects/<project_name>/outputs", methods=["GET"])
+def browse_outputs(project_name):
+    """Browse generated output files for all pipeline stages"""
+    try:
+        project_path = WORKSPACE_ROOT / project_name
+        
+        if not project_path.exists():
+            return jsonify({
+                "status": "error",
+                "message": f"Project '{project_name}' not found"
+            }), 404
+        
+        outputs = {
+            'textures': [],
+            'rigging': [],
+            'animation': [],
+            'export': [],
+            'sprites': []
+        }
+        
+        # Scan texture outputs
+        texture_dir = project_path / "1_textures"
+        if texture_dir.exists():
+            for file_path in texture_dir.iterdir():
+                if file_path.is_file() and file_path.suffix.lower() in ['.png', '.jpg', '.jpeg', '.exr']:
+                    outputs['textures'].append({
+                        'name': file_path.name,
+                        'size': file_path.stat().st_size,
+                        'type': 'image',
+                        'path': str(file_path.relative_to(project_path))
+                    })
+        
+        # Scan rigging outputs
+        rig_dir = project_path / "2_rig"
+        if rig_dir.exists():
+            for file_path in rig_dir.iterdir():
+                if file_path.is_file() and file_path.suffix.lower() in ['.fbx', '.obj', '.glb']:
+                    outputs['rigging'].append({
+                        'name': file_path.name,
+                        'size': file_path.stat().st_size,
+                        'type': 'mesh',
+                        'path': str(file_path.relative_to(project_path))
+                    })
+        
+        # Scan animation outputs
+        anim_dir = project_path / "3_animation"
+        if anim_dir.exists():
+            for file_path in anim_dir.iterdir():
+                if file_path.is_file() and file_path.suffix.lower() in ['.fbx', '.glb']:
+                    outputs['animation'].append({
+                        'name': file_path.name,
+                        'size': file_path.stat().st_size,
+                        'type': 'animation',
+                        'path': str(file_path.relative_to(project_path))
+                    })
+        
+        # Scan export outputs
+        export_dir = project_path / "4_export"
+        if export_dir.exists():
+            for file_path in export_dir.iterdir():
+                if file_path.is_file():
+                    outputs['export'].append({
+                        'name': file_path.name,
+                        'size': file_path.stat().st_size,
+                        'type': 'package',
+                        'path': str(file_path.relative_to(project_path))
+                    })
+        
+        # Scan sprite outputs
+        sprite_dir = project_path / "4_export/sprites"
+        if sprite_dir.exists():
+            for file_path in sprite_dir.iterdir():
+                if file_path.is_file() and file_path.suffix.lower() in ['.png', '.jpg']:
+                    outputs['sprites'].append({
+                        'name': file_path.name,
+                        'size': file_path.stat().st_size,
+                        'type': 'sprite',
+                        'path': str(file_path.relative_to(project_path))
+                    })
+        
+        return jsonify({
+            "status": "success",
+            "outputs": outputs
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+@app.route("/api/projects/<project_name>/outputs/<path:file_path>", methods=["GET"])
+def download_output(project_name, file_path):
+    """Download a specific output file"""
+    try:
+        project_path = WORKSPACE_ROOT / project_name
+        full_path = project_path / file_path
+        
+        if not full_path.exists() or not full_path.is_file():
+            return jsonify({
+                "status": "error",
+                "message": "File not found"
+            }), 404
+        
+        # Security check: ensure file is within project directory
+        if not str(full_path.resolve()).startswith(str(project_path.resolve())):
+            return jsonify({
+                "status": "error",
+                "message": "Invalid file path"
+            }), 403
+        
+        return send_file(str(full_path), as_attachment=True, download_name=full_path.name)
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+@app.route("/api/projects/<project_name>/export", methods=["POST"])
+def export_project(project_name):
+    """Export entire project as a zip file"""
+    import zipfile
+    import tempfile
+    
+    try:
+        project_path = WORKSPACE_ROOT / project_name
+        
+        if not project_path.exists():
+            return jsonify({
+                "status": "error",
+                "message": f"Project '{project_name}' not found"
+            }), 404
+        
+        # Create temporary zip file
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        
+        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Walk through project directory
+            for root, dirs, files in os.walk(project_path):
+                for file in files:
+                    file_path = Path(root) / file
+                    # Calculate archive name (relative to project root)
+                    arc_name = file_path.relative_to(project_path.parent)
+                    zipf.write(file_path, arc_name)
+        
+        # Send the zip file
+        return send_file(
+            temp_zip.name,
+            as_attachment=True,
+            download_name=f"{project_name}_backup.zip",
+            mimetype='application/zip'
+        )
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 
 # ---------------------------------------------------------

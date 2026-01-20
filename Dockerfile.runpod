@@ -70,9 +70,15 @@ USER app
 WORKDIR /opt/comfyui
 RUN pip install --no-cache-dir -r /opt/comfyui/requirements.txt
 
-# Clone ComfyUI custom nodes
-RUN mkdir -p /opt/comfyui/custom_nodes && \
-    cd /opt/comfyui/custom_nodes && \
+# Move custom_nodes to persistent workspace and symlink
+USER root
+RUN mkdir -p ${WORKSPACE}/comfyui_custom_nodes && \
+    ln -s ${WORKSPACE}/comfyui_custom_nodes /opt/comfyui/custom_nodes && \
+    chown -R app:app ${WORKSPACE}/comfyui_custom_nodes
+
+# Clone default ComfyUI custom nodes into persistent location
+USER app
+RUN cd ${WORKSPACE}/comfyui_custom_nodes && \
     git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone https://github.com/cubiq/ComfyUI_essentials.git && \
     git clone https://github.com/WASasquatch/was-node-suite-comfyui.git

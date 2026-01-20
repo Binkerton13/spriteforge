@@ -404,11 +404,22 @@
                 <!-- Pipeline Execution -->
                 <div class="config-section">
                     <h3>Pipeline Execution</h3>
-                    <button class="btn btn-primary btn-large" onclick="runPipeline()" id="runPipelineBtn">
-                        ▶️ Run Pipeline
-                    </button>
-                    <button class="btn btn-small" onclick="refreshPipelineStatus()" style="margin-top: 0.5rem;">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <button class="btn btn-primary btn-large" onclick="runPipeline(false)" id="runPipelineBtn" style="flex: 1;">
+                            ▶️ Run Pipeline
+                        </button>
+                        <button class="btn btn-warning" onclick="runPipeline(true)" title="Regenerate all stages even if outputs exist">
+                            🔄 Force Rerun
+                        </button>
+                    </div>
+                    <button class="btn btn-small" onclick="refreshPipelineStatus()" style="margin-bottom: 0.5rem;">
                         🔄 Refresh Status
+                    </button>
+                    <button class="btn btn-secondary btn-small" onclick="showOutputBrowser()" style="margin-bottom: 0.5rem;">
+                        📂 Browse Outputs
+                    </button>
+                    <button class="btn btn-secondary btn-small" onclick="exportProject()" title="Download entire project as zip">
+                        💾 Export Project
                     </button>
                     
                     <div id="pipelineStagesContainer" class="pipeline-status" style="margin-top: 1rem; display: none;">
@@ -608,6 +619,49 @@
                 <button class="btn btn-secondary" onclick="closePromptEditor()">Cancel</button>
                 <button class="btn btn-secondary" onclick="savePromptOverrides('project')">💾 Save for Project</button>
                 <button class="btn btn-primary" onclick="savePromptOverrides('global')">🌐 Save as Defaults</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Output Browser Modal -->
+    <div id="outputBrowserModal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📂 Output Files</h2>
+                <button class="close-btn" onclick="closeOutputBrowser()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div id="outputBrowserContent" class="output-browser">
+                    <div class="output-section">
+                        <h3>🎨 Textures</h3>
+                        <div id="outputTextures" class="output-file-list"></div>
+                    </div>
+                    
+                    <div class="output-section">
+                        <h3>🦴 Rigged Models</h3>
+                        <div id="outputRigging" class="output-file-list"></div>
+                    </div>
+                    
+                    <div class="output-section">
+                        <h3>🎬 Animations</h3>
+                        <div id="outputAnimation" class="output-file-list"></div>
+                    </div>
+                    
+                    <div class="output-section">
+                        <h3>📦 Export Packages</h3>
+                        <div id="outputExport" class="output-file-list"></div>
+                    </div>
+                    
+                    <div class="output-section">
+                        <h3>🖼️ Sprites</h3>
+                        <div id="outputSprites" class="output-file-list"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeOutputBrowser()">Close</button>
             </div>
         </div>
     </div>

@@ -12,10 +12,11 @@ import time
 class PipelineOrchestrator:
     """Orchestrates the complete 3D character pipeline based on mesh type and configuration"""
     
-    def __init__(self, project_path):
+    def __init__(self, project_path, force_rerun=False):
         self.project_path = Path(project_path)
         self.config_path = self.project_path / "pipeline" / "config.json"
         self.log_path = self.project_path / "pipeline" / "pipeline_log.txt"
+        self.force_rerun = force_rerun
         
         # Load configuration
         with open(self.config_path, 'r') as f:
@@ -72,6 +73,34 @@ class PipelineOrchestrator:
         with open(self.log_path, 'a') as f:
             f.write(log_message + '\n')
     
+    def stage_has_output(self, stage_name):
+        """Check if a stage already has output files"""
+        stage = self.stages[stage_name]
+        output_dir = self.project_path / stage['output_dir']
+        
+        if not output_dir.exists():
+            return False
+        
+        # Check for relevant output files
+        if stage_name == 'textures':
+            # Look for texture images
+            return any(output_dir.glob('*.png')) or any(output_dir.glob('*.jpg'))
+        elif stage_name == 'rigging':
+            # Look for rigged FBX
+            return any(output_dir.glob('*_rigged.fbx'))
+        elif stage_name == 'animation':
+            # Look for animation FBX files
+            return any(output_dir.glob('*.fbx'))
+        elif stage_name == 'export':
+            # Look for export packages
+            return any(output_dir.glob('*.zip')) or any(output_dir.glob('*.glb'))
+        elif stage_name == 'sprites':
+            # Look for sprite images
+            return any(output_dir.glob('*.png'))
+        
+        # Default: check if directory has any files
+        return any(output_dir.iterdir())
+    
     def should_run_stage(self, stage_name):
         """Determine if a stage should run based on mesh type and configuration"""
         stage = self.stages[stage_name]
@@ -93,6 +122,11 @@ class PipelineOrchestrator:
         input_dir = self.project_path / stage['input_dir']
         if not input_dir.exists() or not any(input_dir.iterdir()):
             self.log(f"  Skipping {stage['name']} (no input found in {stage['input_dir']})")
+            return False
+        
+        # Check if stage already completed (unless force_rerun)
+        if not self.force_rerun and self.stage_has_output(stage_name):
+            self.log(f"  Skipping {stage['name']} (output already exists, use force_rerun to regenerate)")
             return False
         
         return True
@@ -255,14 +289,16 @@ class PipelineOrchestrator:
 
 def main():
     """Main entry point"""
-    if len(sys.argv) < 2:
-        print("Usage: python run_pipeline.py <project_path>")
-        print("  project_path: Path to project directory")
-        sys.exit(1)
+    import argparse
     
-    project_path = sys.argv[1]
+    parser = argparse.ArgumentParser(description="Run 3D character pipeline")
+    parser.add_argument("project_path", help="Path to project directory")
+    parser.add_argument("--force-rerun", "-f", action="store_true",
+                        help="Force re-run all stages even if outputs exist")
     
-    orchestrator = PipelineOrchestrator(project_path)
+    args = parser.parse_args()
+    
+    orchestrator = PipelineOrchestrator(args.project_path, force_rerun=args.force_rerun)
     success = orchestrator.run_pipeline()
     
     sys.exit(0 if success else 1)
