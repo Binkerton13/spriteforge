@@ -146,24 +146,12 @@
       }
     },
     {
-      "id": 14,
-      "type": "ColorCorrect",
-      "pos": [1650, 500],
-      "inputs": {
-        "image": ["13", 0],
-        "brightness": 0.0,
-        "contrast": 0.0,
-        "saturation": 0.0,
-        "gamma": 1.0
-      }
-    },
-    {
       "id": 7,
       "type": "SaveImage",
       "pos": [1900, 500],
       "inputs": {
         "filename_prefix": "output",
-        "image": ["14", 0]
+        "image": ["13", 0]
       }
     }
   ],
@@ -179,7 +167,6 @@
     [10, 1, 12, 1],
     [11, 0, 12, 0],
     [12, 0, 13, 0],
-    [13, 0, 14, 0],
-    [14, 0, 7, 0]
+    [13, 0, 7, 0]
   ]
 }
