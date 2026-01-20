@@ -25,6 +25,8 @@ class PipelineOrchestrator:
         self.mesh_type = self.config.get('mesh_type', 'skeletal')
         
         # Define pipeline stages
+        # New pipeline: Mesh → UniRig → HY-Motion → AI-Enhanced Sprites
+        # Removed: Texture generation (archived)
         self.stages = {
             'prep': {
                 'name': 'Mesh Preparation',
@@ -32,13 +34,6 @@ class PipelineOrchestrator:
                 'script': 'tools/prepare_mesh.py',
                 'input_dir': '0_input',
                 'output_dir': '0_input'  # Overwrites input with prepared mesh
-            },
-            'textures': {
-                'name': 'Texture Generation',
-                'required_for': ['skeletal', 'static'],
-                'script': 'tools/generate_textures.py',
-                'input_dir': '0_input',
-                'output_dir': '1_textures'
             },
             'rigging': {
                 'name': 'Rigging',
@@ -54,20 +49,19 @@ class PipelineOrchestrator:
                 'input_dir': '2_rig',
                 'output_dir': '3_animation'
             },
-            'export': {
-                'name': 'Export',
-                'required_for': ['skeletal', 'static'],
-                'script': 'tools/export_package.py',
-                'input_dir': '3_animation',  # or 1_textures for static
-                'output_dir': '4_export'
-            },
             'sprites': {
                 'name': 'Sprite Generation',
                 'required_for': ['skeletal'],
                 'script': 'tools/generate_sprites.py',
                 'input_dir': '3_animation',
-                'output_dir': '4_export/sprites',
-                'optional': True  # Only runs if enabled in config
+                'output_dir': '5_sprites'  # Changed from 4_export/sprites
+            },
+            'export': {
+                'name': 'Export',
+                'required_for': ['skeletal', 'static'],
+                'script': 'tools/export_package.py',
+                'input_dir': '5_sprites',  # Package sprites
+                'output_dir': '4_export'
             }
         }
     
@@ -92,9 +86,6 @@ class PipelineOrchestrator:
         if stage_name == 'prep':
             # Prep stage always runs to ensure UV unwrapping
             return False
-        elif stage_name == 'textures':
-            # Look for texture images
-            return any(output_dir.glob('*.png')) or any(output_dir.glob('*.jpg'))
         elif stage_name == 'rigging':
             # Look for rigged FBX
             return any(output_dir.glob('*_rigged.fbx'))

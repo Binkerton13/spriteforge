@@ -1,0 +1,189 @@
+{
+  "workflow": "sprite_generation_enhanced",
+  "description": "Advanced sprite generation for 3D action games using AnimateDiff + IP-Adapter + Multi-ControlNet",
+  "version": "2.0",
+  "target_style": "3D action game (Diablo, Path of Exile, Hades)",
+  
+  "camera_presets": {
+    "isometric_4way": {
+      "name": "Isometric 4-Direction",
+      "angles": [
+        {"azimuth": 315, "elevation": 30, "label": "NE"},
+        {"azimuth": 45, "elevation": 30, "label": "SE"},
+        {"azimuth": 135, "elevation": 30, "label": "SW"},
+        {"azimuth": 225, "elevation": 30, "label": "NW"}
+      ]
+    },
+    "isometric_8way": {
+      "name": "Isometric 8-Direction",
+      "angles": [
+        {"azimuth": 0, "elevation": 30, "label": "N"},
+        {"azimuth": 45, "elevation": 30, "label": "NE"},
+        {"azimuth": 90, "elevation": 30, "label": "E"},
+        {"azimuth": 135, "elevation": 30, "label": "SE"},
+        {"azimuth": 180, "elevation": 30, "label": "S"},
+        {"azimuth": 225, "elevation": 30, "label": "SW"},
+        {"azimuth": 270, "elevation": 30, "label": "W"},
+        {"azimuth": 315, "elevation": 30, "label": "NW"}
+      ]
+    },
+    "three_quarter_8way": {
+      "name": "3/4 View 8-Direction",
+      "angles": [
+        {"azimuth": 0, "elevation": 25, "label": "N"},
+        {"azimuth": 45, "elevation": 25, "label": "NE"},
+        {"azimuth": 90, "elevation": 25, "label": "E"},
+        {"azimuth": 135, "elevation": 25, "label": "SE"},
+        {"azimuth": 180, "elevation": 25, "label": "S"},
+        {"azimuth": 225, "elevation": 25, "label": "SW"},
+        {"azimuth": 270, "elevation": 25, "label": "W"},
+        {"azimuth": 315, "elevation": 25, "label": "NW"}
+      ]
+    },
+    "side_scroller_2way": {
+      "name": "Side-Scroller (Left/Right)",
+      "angles": [
+        {"azimuth": 90, "elevation": 0, "label": "Right"},
+        {"azimuth": 270, "elevation": 0, "label": "Left"}
+      ]
+    }
+  },
+  
+  "quality_presets": {
+    "fast_prototype": {
+      "name": "Fast Prototype",
+      "resolution": [256, 256],
+      "fps": 12,
+      "frame_sample": 2,
+      "steps": 4,
+      "model": "sdxl-turbo"
+    },
+    "balanced": {
+      "name": "Balanced Quality/Speed",
+      "resolution": [512, 512],
+      "fps": 16,
+      "frame_sample": 1,
+      "steps": 8,
+      "model": "sdxl-lightning"
+    },
+    "high_quality": {
+      "name": "High Quality",
+      "resolution": [512, 512],
+      "fps": 24,
+      "frame_sample": 1,
+      "steps": 20,
+      "model": "sdxl-1.0"
+    },
+    "ultra_quality": {
+      "name": "Ultra Quality (Slow)",
+      "resolution": [1024, 1024],
+      "fps": 30,
+      "frame_sample": 1,
+      "steps": 30,
+      "model": "sdxl-1.0"
+    }
+  },
+  
+  "controlnet_config": {
+    "openpose": {
+      "model": "control_v11p_sd15_openpose",
+      "weight": 0.9,
+      "start": 0.0,
+      "end": 1.0,
+      "purpose": "Preserve character pose and skeleton"
+    },
+    "depth": {
+      "model": "control_v11f1p_sd15_depth",
+      "weight": 0.7,
+      "start": 0.0,
+      "end": 0.8,
+      "purpose": "Preserve 3D shape and volume"
+    },
+    "normal": {
+      "model": "control_v11p_sd15_normalbae",
+      "weight": 0.5,
+      "start": 0.0,
+      "end": 0.6,
+      "purpose": "Surface details and lighting"
+    },
+    "canny": {
+      "model": "control_v11p_sd15_canny",
+      "weight": 0.4,
+      "start": 0.2,
+      "end": 0.8,
+      "purpose": "Sharp edges and outlines",
+      "optional": true
+    }
+  },
+  
+  "animatediff_config": {
+    "model": "animatediff_v3_sd15",
+    "motion_model": "v3_sd15_mm.ckpt",
+    "context_length": 16,
+    "context_overlap": 8,
+    "motion_scale": 0.5,
+    "purpose": "Temporal consistency across frames"
+  },
+  
+  "ip_adapter_config": {
+    "model": "ip-adapter-faceid-plusv2_sd15",
+    "weight": 0.7,
+    "start": 0.0,
+    "end": 1.0,
+    "reference_images": [],
+    "purpose": "Character style and facial consistency"
+  },
+  
+  "prompt_template": {
+    "positive": "{character_description}, {style_tags}, detailed sprite, isometric view, game art, professional quality, clean edges, consistent lighting",
+    "negative": "blurry, distorted, low quality, jpeg artifacts, watermark, text, inconsistent style, different outfit, face change",
+    "style_tags": [
+      "pixel perfect",
+      "hand-painted texture",
+      "stylized realistic",
+      "cel-shaded",
+      "painterly",
+      "low poly aesthetic"
+    ]
+  },
+  
+  "post_processing": {
+    "background_removal": {
+      "method": "rembg",
+      "model": "u2net",
+      "alpha_matting": true
+    },
+    "shadow_baking": {
+      "enabled": true,
+      "shadow_opacity": 0.4,
+      "shadow_blur": 5,
+      "shadow_offset": [0, 10]
+    },
+    "edge_enhancement": {
+      "sharpen": 0.3,
+      "contrast": 1.1
+    },
+    "sprite_sheet": {
+      "generate": true,
+      "layout": "grid",
+      "padding": 4,
+      "metadata": true
+    }
+  },
+  
+  "example_character_prompts": {
+    "female_warrior": "female warrior, long red hair, blue eyes, leather armor with gold trim, detailed facial features, athletic build, confident pose",
+    "male_mage": "male wizard, grey beard, staff, flowing blue robes, wise expression, arcane symbols, mystical aura",
+    "elf_ranger": "elf ranger, blonde hair, green cloak, bow and quiver, pointed ears, forest guardian, agile stance",
+    "dwarf_fighter": "dwarf warrior, braided beard, heavy plate armor, battle axe, stout build, battle-hardened veteran"
+  },
+  
+  "comfyui_nodes_required": [
+    "ComfyUI-AnimateDiff-Evolved",
+    "ComfyUI_IPAdapter_plus",
+    "comfyui_controlnet_aux",
+    "ComfyUI-Advanced-ControlNet",
+    "ComfyUI-rembg",
+    "ComfyUI-Frame-Interpolation"
+  ]
+}
