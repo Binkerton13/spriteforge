@@ -169,12 +169,23 @@ class PipelineOrchestrator:
         if stage_name in ['prep', 'rigging', 'animation', 'sprites']:
             # Blender scripts - need input/output mesh paths
             if stage_name == 'prep':
-                input_dir = self.project_path / stage['input_dir']
+                # Look for mesh in 0_input/meshes folder
+                input_dir = self.project_path / '0_input' / 'meshes'
+                if not input_dir.exists():
+                    # Fallback to 0_input for backward compatibility
+                    input_dir = self.project_path / '0_input'
+                
                 input_mesh = next(input_dir.glob('*.fbx'), next(input_dir.glob('*.obj'), None))
                 if not input_mesh:
                     self.log(f"  ✗ No input mesh found in {input_dir}")
                     return False
-                output_mesh = input_dir / f"{input_mesh.stem}_prepared.fbx"
+                
+                # Output to 0_input (root) for other stages to use
+                output_mesh = self.project_path / '0_input' / f"{input_mesh.stem}_prepared.fbx"
+                
+                self.log(f"  Input:  {input_mesh.name}")
+                self.log(f"  Output: {output_mesh.name}")
+                
                 cmd = [
                     'blender',
                     '--background',

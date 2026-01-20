@@ -51,39 +51,72 @@ def import_mesh(mesh_path):
     return mesh_obj
 
 
-def create_uv_unwrapping(mesh_obj):
+def create_uv_unwrapping(mesh_obj, project_path=None):
     """
-    Create UV unwrapping for texture mapping
-    Uses Smart UV Project for automatic unwrapping
+    Create or apply UV unwrapping for texture mapping.
+    First checks if UDIM UV layouts were uploaded, otherwise generates Smart UV Project.
+    
+    Args:
+        mesh_obj: Blender mesh object
+        project_path: Path to project directory (to check for uploaded UV layouts)
     """
     print("\n=== UV Unwrapping ===")
     
-    # Select the mesh and enter edit mode
-    bpy.context.view_layer.objects.active = mesh_obj
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
+    # Check for uploaded UDIM UV layouts
+    uv_layout_applied = False
+    if project_path:
+        uv_layout_dir = project_path / "0_input" / "uv_layouts"
+        if uv_layout_dir.exists():
+            uv_images = list(uv_layout_dir.glob("*.png")) + list(uv_layout_dir.glob("*.jpg"))
+            if uv_images:
+                print(f"Found {len(uv_images)} uploaded UV layout(s) in {uv_layout_dir}")
+                # User has uploaded UDIM UV layouts - use the existing UVs from the mesh
+                if mesh_obj.data.uv_layers:
+                    print(f"✓ Using existing UV map from mesh: {mesh_obj.data.uv_layers.active.name}")
+                    print(f"  Uploaded UV layouts will be used for texturing:")
+                    for uv_img in uv_images:
+                        print(f"    - {uv_img.name}")
+                    uv_layout_applied = True
+                else:
+                    print("⚠ UV layouts uploaded but mesh has no UV coordinates")
+                    print("  Mesh must be UV unwrapped in your 3D software to match uploaded layouts")
+                    print("  Falling back to automatic UV unwrapping...")
     
-    # Create UV layer if it doesn't exist
-    if not mesh_obj.data.uv_layers:
-        mesh_obj.data.uv_layers.new(name='UVMap')
-        print("Created new UV layer: UVMap")
+    if not uv_layout_applied:
+        # No uploaded UV layouts or mesh has no UVs - generate automatic unwrapping
+        print("No UDIM UV layouts uploaded, generating automatic UV unwrapping...")
+        
+        # Select the mesh and enter edit mode
+        bpy.context.view_layer.objects.active = mesh_obj
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        
+        # Create UV layer if it doesn't exist
+        if not mesh_obj.data.uv_layers:
+            mesh_obj.data.uv_layers.new(name='UVMap')
+            print("Created new UV layer: UVMap")
+        else:
+            print(f"Using existing UV layer: {mesh_obj.data.uv_layers.active.name}")
+        
+        # Smart UV Project - works well for organic models
+        print("Applying Smart UV Project...")
+        bpy.ops.uv.smart_project(
+            angle_limit=66.0,  # Seam angle threshold
+            island_margin=0.02,  # Space between UV islands (2%)
+            area_weight=0.0,  # Don't weight by face area
+            correct_aspect=True,
+            scale_to_bounds=True
+        )
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        print(f"✓ UV unwrapping complete: {len(mesh_obj.data.uv_layers)} UV layer(s)")
+        print("  Generated UVs - textures will be auto-generated to fit")
     else:
-        print(f"Existing UV layers: {[uv.name for uv in mesh_obj.data.uv_layers]}")
+        # Make sure we're in object mode
+        if bpy.context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
     
-    # Smart UV Project - works well for organic models
-    print("Applying Smart UV Project...")
-    bpy.ops.uv.smart_project(
-        angle_limit=66.0,  # Seam angle threshold
-        island_margin=0.02,  # Space between UV islands (2%)
-        area_weight=0.0,  # Don't weight by face area
-        correct_aspect=True,
-        scale_to_bounds=True
-    )
-    
-    bpy.ops.object.mode_set(mode='OBJECT')
-    print(f"✓ UV unwrapping complete: {len(mesh_obj.data.uv_layers)} UV layer(s)")
-    print("  Textures will now map correctly to mesh surface")
-    
+    print(f"Final UV layers: {len(mesh_obj.data.uv_layers)}")
     return True
 
 
@@ -157,11 +190,15 @@ def main():
     input_mesh = Path(args[0])
     output_mesh = Path(args[1])
     
+    # Get project path (parent directories: 0_input/meshes -> 0_input -> project_root)
+    project_path = input_mesh.parent.parent
+    
     print("="*80)
     print("MESH PREPARATION")
     print("="*80)
-    print(f"Input:  {input_mesh}")
-    print(f"Output: {output_mesh}")
+    print(f"Input:   {input_mesh}")
+    print(f"Output:  {output_mesh}")
+    print(f"Project: {project_path}")
     print("")
     
     if not input_mesh.exists():
@@ -178,8 +215,8 @@ def main():
         # Validate and cleanup
         validate_and_cleanup(mesh_obj)
         
-        # Create UV unwrapping
-        create_uv_unwrapping(mesh_obj)
+        # Create UV unwrapping (checks for uploaded UDIM layouts first)
+        create_uv_unwrapping(mesh_obj, project_path)
         
         # Export prepared mesh
         export_mesh(mesh_obj, output_mesh)
