@@ -301,6 +301,38 @@ def main():
     
     # Get texture configuration
     udim_tiles = config.get("udim_tiles", {})
+    
+    # Check for uploaded UDIM UV layouts and generate for those tiles
+    uv_layout_dir = project_dir / "0_input" / "uv_layouts"
+    if uv_layout_dir.exists():
+        uv_files = list(uv_layout_dir.glob("*.png")) + list(uv_layout_dir.glob("*.jpg"))
+        if uv_files:
+            log(f"Found {len(uv_files)} uploaded UV layouts - generating textures for these tiles")
+            # Extract UDIM tile numbers from filenames (e.g., character_uv_1001.png -> 1001)
+            detected_tiles = set()
+            for uv_file in uv_files:
+                # Look for 4-digit UDIM tile number in filename
+                import re
+                match = re.search(r'(\d{4})', uv_file.stem)
+                if match:
+                    tile_id = match.group(1)
+                    detected_tiles.add(tile_id)
+                    log(f"  Detected UDIM tile {tile_id} from {uv_file.name}")
+            
+            if detected_tiles:
+                # Use tile 1001 config as template for all detected tiles
+                template_config = udim_tiles.get("1001", {
+                    "prompt": "3D game character texture",
+                    "negative": "blurry, low quality, distorted",
+                    "seed": 42
+                })
+                
+                # Create config for each detected tile
+                for tile_id in detected_tiles:
+                    if tile_id not in udim_tiles:
+                        udim_tiles[tile_id] = template_config.copy()
+                        log(f"  Added config for tile {tile_id} based on tile 1001")
+    
     if not udim_tiles:
         log("WARNING: No UDIM tiles configured, using default tile 1001")
         udim_tiles = {"1001": {"prompt": "3D game character texture", "negative_prompt": "", "seed": 42}}

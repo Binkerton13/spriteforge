@@ -424,24 +424,99 @@ def create_basic_armature(mesh_obj):
     
     print(f"Created anatomically-aligned armature with {len(armature.data.bones)} bones")
     
-    # Apply automatic weights with better settings
+    # Apply weights - try automatic first, fallback to manual on failure
     print("Applying automatic weights...")
     mesh_obj.select_set(True)
     armature.select_set(True)
     bpy.context.view_layer.objects.active = armature
     
-    # Use automatic weights
-    bpy.ops.object.parent_set(type='ARMATURE_AUTO')
-    
-    # Clean up weights
-    print("Cleaning up vertex weights...")
-    bpy.context.view_layer.objects.active = mesh_obj
-    bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
-    bpy.ops.object.vertex_group_clean(group_select_mode='ALL', limit=0.01)
-    bpy.ops.object.mode_set(mode='OBJECT')
+    # Try automatic weights
+    try:
+        bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+        
+        # Check if armature modifier was actually created
+        armature_mod = None
+        for mod in mesh_obj.modifiers:
+            if mod.type == 'ARMATURE':
+                armature_mod = mod
+                break
+        
+        if not armature_mod:
+            print("WARNING: Automatic weights failed - no armature modifier created")
+            raise Exception("Automatic weights failed")
+        
+        print("✓ Automatic weights applied successfully")
+        
+        # Clean up weights
+        print("Cleaning up vertex weights...")
+        bpy.context.view_layer.objects.active = mesh_obj
+        bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
+        bpy.ops.object.vertex_group_clean(group_select_mode='ALL', limit=0.01)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
+    except Exception as e:
+        print(f"⚠ Automatic weights failed: {e}")
+        print("Applying manual weight painting fallback...")
+        
+        # Parent mesh to armature without weights
+        mesh_obj.parent = armature
+        
+        # Create armature modifier manually
+        armature_mod = mesh_obj.modifiers.new(name='Armature', type='ARMATURE')
+        armature_mod.object = armature
+        
+        # Apply basic weight painting based on bone proximity
+        apply_proximity_weights(mesh_obj, armature)
+        
+        print("✓ Manual proximity weights applied")
     
     print(f"Created fallback humanoid armature: {armature.name} (24 bones)")
     return armature
+
+
+def apply_proximity_weights(mesh_obj, armature):
+    """
+    Apply weights based on vertex proximity to bones
+    Fallback when automatic weights fail
+    """
+    print("  Calculating proximity-based weights...")
+    
+    # Get mesh vertices in world space
+    mesh_verts = [mesh_obj.matrix_world @ v.co for v in mesh_obj.data.vertices]
+    
+    # For each bone, create vertex group
+    for bone in armature.data.bones:
+        if bone.name not in mesh_obj.vertex_groups:
+            mesh_obj.vertex_groups.new(name=bone.name)
+    
+    # Calculate bone positions in world space
+    bone_positions = {}
+    for bone in armature.data.bones:
+        bone_positions[bone.name] = armature.matrix_world @ ((bone.head_local + bone.tail_local) / 2)
+    
+    # Assign weights based on proximity (inverse distance)
+    for v_idx, v_co in enumerate(mesh_verts):
+        # Calculate distance to each bone
+        bone_distances = {}
+        for bone_name, bone_pos in bone_positions.items():
+            distance = (v_co - bone_pos).length
+            if distance < 0.001:  # Avoid division by zero
+                distance = 0.001
+            bone_distances[bone_name] = distance
+        
+        # Get the 3 closest bones
+        closest_bones = sorted(bone_distances.items(), key=lambda x: x[1])[:3]
+        
+        # Calculate weights (inverse distance, normalized)
+        total_inv_dist = sum(1.0 / dist for _, dist in closest_bones)
+        
+        for bone_name, dist in closest_bones:
+            weight = (1.0 / dist) / total_inv_dist
+            if weight > 0.01:  # Only assign significant weights
+                vgroup = mesh_obj.vertex_groups[bone_name]
+                vgroup.add([v_idx], weight, 'REPLACE')
+    
+    print(f"  Applied proximity weights to {len(mesh_verts)} vertices")
 
 
 def sample_deformation_poses(armature, mesh_obj):
