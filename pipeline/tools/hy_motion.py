@@ -32,10 +32,19 @@ def generate_animation(project_path: Path, config: dict):
     
     # Get selected animations based on mode
     if anim_mode == 'library':
-        selected_animations = hy_motion_config.get('selections', [])
+        selections = hy_motion_config.get('selections', [])
+        # UI sends list of dicts with animation data, extract just the names
+        if selections and isinstance(selections[0], dict):
+            selected_animations = [anim.get('name', 'idle') for anim in selections]
+            animation_configs = {anim['name']: anim for anim in selections if 'name' in anim}
+        else:
+            # Backward compatibility: list of strings
+            selected_animations = selections
+            animation_configs = {}
     else:
         # Custom prompt mode - use the custom fields
         selected_animations = []
+        animation_configs = {}
     
     print(f"\nHY-Motion config: {hy_motion_config}")
     print(f"Animation mode: {anim_mode}")
@@ -45,22 +54,28 @@ def generate_animation(project_path: Path, config: dict):
         print("WARNING: No animations selected in config")
         print("Using default animation: idle")
         selected_animations = ['idle']
+        animation_configs = {}
     
     # Generate each selected animation
     for anim_name in selected_animations:
         print(f"\n[HY-MOTION] Generating animation: {anim_name}")
         
-        # Prepare prompt for this animation
-        # Load from animation library if available, otherwise use animation name
-        prompt_lib_path = Path(__file__).parent.parent / "hy_motion_prompts" / "prompt_library.json"
-        
-        if prompt_lib_path.exists():
-            with open(prompt_lib_path, 'r') as f:
-                prompt_lib = json.load(f)
-                animation_data = prompt_lib.get('animations', {}).get(anim_name, {})
-                prompt_text = animation_data.get('motion', f"A person performs {anim_name} animation")
+        # Check if we have config data from UI for this animation
+        if anim_name in animation_configs:
+            anim_data = animation_configs[anim_name]
+            prompt_text = anim_data.get('motion', f"A person performs {anim_name} animation")
+            print(f"Using animation config from UI selection")
         else:
-            prompt_text = f"A person performs {anim_name} animation"
+            # Fallback: Load from animation library file
+            prompt_lib_path = Path(__file__).parent.parent / "hy_motion_prompts" / "prompt_library.json"
+            
+            if prompt_lib_path.exists():
+                with open(prompt_lib_path, 'r') as f:
+                    prompt_lib = json.load(f)
+                    animation_data = prompt_lib.get('animations', {}).get(anim_name, {})
+                    prompt_text = animation_data.get('motion', f"A person performs {anim_name} animation")
+            else:
+                prompt_text = f"A person performs {anim_name} animation"
         
         print(f"Prompt: {prompt_text}")
         
