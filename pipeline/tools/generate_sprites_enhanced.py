@@ -199,6 +199,10 @@ def render_controlnet_maps(output_dir, frame_num, angle_label):
     scene = bpy.context.scene
     maps = {}
     
+    # Enable necessary render passes
+    scene.view_layers[0].use_pass_z = True  # Depth pass
+    scene.view_layers[0].use_pass_normal = True  # Normal pass
+    
     # OpenPose: Render with compositor nodes for pose visualization
     # (Simplified - full implementation would use OpenPose estimation)
     pose_path = output_dir / f"pose_{angle_label}_f{frame_num:04d}.png"
