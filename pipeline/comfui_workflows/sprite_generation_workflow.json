@@ -56,14 +56,17 @@
     },
     {
       "id": 17,
-      "type": "IPAdapterApply",
+      "type": "IPAdapter",
       "pos": [650, 450],
       "inputs": {
         "model": ["2", 0],
         "ipadapter": ["16", 0],
         "image": ["15", 0],
         "weight": 0.3,
-        "weight_type": "linear"
+        "weight_type": "linear",
+        "start_at": 0.0,
+        "end_at": 1.0,
+        "unfold_batch": false
       },
       "comment": "Apply style reference if provided (lower weight for subtlety)"
     },
