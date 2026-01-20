@@ -79,16 +79,21 @@ cd ..
 
 **Purpose:** Advanced ControlNet weight scheduling and multi-ControlNet support.
 
-#### Rembg (Background Removal)
+#### Background Removal (Rembg Alternative)
 
 ```bash
-git clone https://github.com/mlinmg/ComfyUI-rembg.git
-cd ComfyUI-rembg
-pip install rembg[gpu]
+# Option A: Install rembg package directly
+pip install rembg[gpu]  # or just 'rembg' if no GPU
+
+# Option B: Use ComfyUI_essentials (includes background removal + other tools)
+git clone https://github.com/cubiq/ComfyUI_essentials.git
+cd ComfyUI_essentials
+pip install -r requirements.txt
 cd ..
 ```
 
 **Purpose:** Removes backgrounds for transparent sprites.
+**Note:** The original ComfyUI-rembg repository is no longer available. Use alternatives above.
 
 #### Frame Interpolation (Optional)
 
@@ -337,7 +342,8 @@ For issues with specific custom nodes, check their GitHub repositories:
 - IP-Adapter: https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues
 - ControlNet Aux: https://github.com/Fannovel16/comfyui_controlnet_aux/issues
 - Advanced ControlNet: https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet/issues
-- Rembg: https://github.com/mlinmg/ComfyUI-rembg/issues
+- ComfyUI Essentials: https://github.com/cubiq/ComfyUI_essentials/issues
+- Rembg Package: https://github.com/danielgatis/rembg/issues
 - Frame Interpolation: https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/issues
 
 For ComfyUI general issues: https://github.com/comfyanonymous/ComfyUI/issues

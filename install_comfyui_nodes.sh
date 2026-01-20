@@ -92,29 +92,33 @@ fi
 echo "  ✓ Advanced ControlNet installed"
 echo ""
 
-# 5. Rembg (background removal)
-echo "[5/6] Installing ComfyUI-rembg..."
-if [ -d "ComfyUI-rembg" ]; then
-    echo "  Already exists, pulling updates..."
-    cd ComfyUI-rembg
+# 5. Background Removal (alternative methods)
+echo "[5/6] Installing background removal support..."
+# Note: The mlinmg/ComfyUI-rembg repo is no longer available
+# Using alternative: install rembg directly or use other custom nodes
+
+# Option A: Install rembg package directly (works with standard ComfyUI nodes)
+cd "$COMFYUI_DIR"
+echo "  Installing rembg package..."
+python -m pip install rembg[gpu] 2>/dev/null || python -m pip install rembg
+cd "$CUSTOM_NODES_DIR"
+
+# Option B: Use ComfyUI_essentials which includes background removal
+echo "  Installing ComfyUI_essentials (includes background removal)..."
+if [ -d "ComfyUI_essentials" ]; then
+    echo "    Already exists, pulling updates..."
+    cd ComfyUI_essentials
     git pull
     cd ..
 else
-    git clone https://github.com/mlinmg/ComfyUI-rembg.git
+    git clone https://github.com/cubiq/ComfyUI_essentials.git
 fi
-if [ -f "ComfyUI-rembg/requirements.txt" ]; then
-    echo "  Installing requirements..."
+if [ -f "ComfyUI_essentials/requirements.txt" ]; then
     cd "$COMFYUI_DIR"
-    python -m pip install -r custom_nodes/ComfyUI-rembg/requirements.txt
-    cd "$CUSTOM_NODES_DIR"
-else
-    # Install rembg manually if no requirements.txt
-    cd "$COMFYUI_DIR"
-    echo "  Installing rembg package..."
-    python -m pip install rembg[gpu]
+    python -m pip install -r custom_nodes/ComfyUI_essentials/requirements.txt
     cd "$CUSTOM_NODES_DIR"
 fi
-echo "  ✓ Rembg installed"
+echo "  ✓ Background removal support installed"
 echo ""
 
 # 6. Frame Interpolation (optional - for smoother animations)

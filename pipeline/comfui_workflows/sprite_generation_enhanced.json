@@ -183,7 +183,9 @@
     "ComfyUI_IPAdapter_plus",
     "comfyui_controlnet_aux",
     "ComfyUI-Advanced-ControlNet",
-    "ComfyUI-rembg",
+    "ComfyUI_essentials",
     "ComfyUI-Frame-Interpolation"
-  ]
+  ],
+  
+  "note": "Background removal: Install 'rembg' package directly (pip install rembg[gpu]) or use ComfyUI_essentials which includes background removal nodes"
 }
