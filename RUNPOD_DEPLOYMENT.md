@@ -172,11 +172,65 @@ MODEL_URLS=https://example.com/model1.safetensors,https://example.com/model2.saf
 1. ✅ **Image Published**: `ghcr.io/binkerton13/3d-ai-workstation:latest`
 2. ⏳ **Create Template**: Follow Step 2 above
 3. ⏳ **Deploy Pod**: Follow Step 3 above
-4. ⏳ **Test Pipeline**: Upload test mesh and run full workflow
-5. ⏳ **Monitor Performance**: Check GPU utilization, memory usage
+4. ⏳ **Install Dependencies**: SSH into pod and run:
+   ```bash
+   cd /workspace
+   chmod +x install_dependencies.sh
+   ./install_dependencies.sh
+   ```
+   This installs Pillow, UniRig, and HY-Motion (~5 minutes)
+   
+5. ⏳ **Test Pipeline**: Upload test mesh and run full workflow
+6. ⏳ **Download Models** (Optional): For production use, download UniRig and HY-Motion models (~20 GB)
+7. ⏳ **Monitor Performance**: Check GPU utilization, memory usage
+
+## Post-Launch Setup
+
+### Required: Core Dependencies (~5 minutes)
+
+After your pod starts, SSH into the container:
+
+```bash
+# Click "Connect" → "Start SSH Terminal" in RunPod UI
+# Or use SSH command from pod details page
+
+cd /workspace
+chmod +x install_dependencies.sh
+./install_dependencies.sh
+```
+
+This installs:
+- **Pillow**: Required for sprite generation
+- **UniRig**: Auto-rigging (works in fallback mode without models)
+- **HY-Motion**: Animation generation (works in fallback mode without models)
+
+### Optional: AI Model Downloads (~20 GB, 30-60 minutes)
+
+For production use, download the AI models:
+
+```bash
+# UniRig models (~5 GB)
+cd /workspace/unirig/models
+# Download from: https://github.com/VAST-AI-Research/UniRig#download-models
+
+# HY-Motion models (~15 GB)
+cd /workspace/hy-motion/models
+# Download from: https://github.com/Tencent-Hunyuan/HY-Motion-1.0#model-download
+```
+
+**Without models**: Pipeline uses fallback modes (basic rigging, placeholder animations).
+
+### Why Post-Launch Installation?
+
+✅ **Smaller container**: ~10 GB instead of ~30 GB  
+✅ **Faster deployment**: Quick pod startup  
+✅ **Cost savings**: Pay for storage only when pod is running  
+✅ **Flexible**: Skip models for testing, download for production  
 
 ---
 
 **Support**: Check `/workspace/pipeline/README.md` for pipeline documentation
+**Dependencies**: See `/workspace/DEPENDENCIES.md` for detailed installation guide
 **GUI Features**: See `/workspace/pipeline/WEB_GUI_SUMMARY.md`
 **Quick Start**: See `/workspace/pipeline/QUICKSTART_GUI.md`
+

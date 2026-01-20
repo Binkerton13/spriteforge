@@ -210,7 +210,58 @@ REQUIRED_MODELS = {
 ```
 3. Add to GUI workflow selector in `index.html`
 
+## � Documentation
+
+- **[DEPENDENCIES.md](DEPENDENCIES.md)** - Installing Pillow, UniRig, and HY-Motion
+- **[COMFYUI_INSTALLATION.md](COMFYUI_INSTALLATION.md)** - ComfyUI custom nodes and models setup
+- **[SPRITE_PIPELINE.md](SPRITE_PIPELINE.md)** - AI-enhanced sprite generation guide
+- **[UNIRIG_HYMOTION_INTEGRATION.md](UNIRIG_HYMOTION_INTEGRATION.md)** - Auto-rigging and animation integration
+- **[RUNPOD_DEPLOYMENT.md](RUNPOD_DEPLOYMENT.md)** - RunPod template configuration
+
+## 🔧 Installation & Setup
+
+### 1. Core Dependencies (Required)
+
+Install Pillow, UniRig, and HY-Motion:
+
+```bash
+cd /workspace
+chmod +x install_dependencies.sh
+./install_dependencies.sh
+```
+
+Or install manually - see **[DEPENDENCIES.md](DEPENDENCIES.md)** for detailed instructions.
+
+### 2. ComfyUI Dependencies (For Sprite Generation)
+
+Install custom nodes and AI models - see **[COMFYUI_INSTALLATION.md](COMFYUI_INSTALLATION.md)** or click **⚙️ ComfyUI Setup** in the web UI.
+
+Required:
+- 6 custom nodes (AnimateDiff, IP-Adapter, ControlNet, etc.)
+- ~20 GB AI models (motion, ControlNet, checkpoints)
+
+### 3. AI Model Downloads (Optional)
+
+**UniRig Models** (~5 GB):
+- Visit: https://github.com/VAST-AI-Research/UniRig#download-models
+- Place in: `/workspace/unirig/models/`
+- Without models: Uses fallback armature (20 bones, auto weights)
+
+**HY-Motion Models** (~15 GB):
+- Visit: https://github.com/Tencent-Hunyuan/HY-Motion-1.0#model-download
+- Place in: `/workspace/hy-motion/models/`
+- Without models: Creates placeholder animations
+
 ## 🐛 Troubleshooting
+
+**Pillow not found**:
+```bash
+/opt/blender/4.0/python/bin/python3.10 -m pip install Pillow
+```
+
+**UniRig/HY-Motion warnings**:
+- Pipeline works with fallback modes (basic rigging/placeholder animations)
+- Download models for full functionality (see above)
 
 **Models not validating**:
 - Check model files are in correct ComfyUI folders
