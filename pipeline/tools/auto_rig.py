@@ -159,6 +159,13 @@ def apply_unirig(mesh_obj, config):
         print("In production, UniRig will be installed at /workspace/unirig")
         return create_basic_armature(mesh_obj)
     
+    # Verify merge.sh script exists
+    merge_script = Path("/workspace/unirig/launch/inference/merge.sh")
+    if not merge_script.exists():
+        print(f"WARNING: merge.sh not found at {merge_script}")
+        print("Falling back to basic armature")
+        return create_basic_armature(mesh_obj)
+    
     # Create temporary directory for UniRig processing
     with tempfile.TemporaryDirectory() as tmpdir:
         temp_input = f"{tmpdir}/input_mesh.fbx"
@@ -228,9 +235,22 @@ def apply_unirig(mesh_obj, config):
         
         try:
             result = subprocess.run(merge_cmd, check=True, capture_output=True, text=True)
-            print("Merge complete")
+            print("Merge command completed")
             if result.stdout:
                 print(result.stdout)
+            if result.stderr:
+                print(f"stderr: {result.stderr}")
+            
+            # Verify output file was created
+            if not os.path.exists(temp_output):
+                print(f"ERROR: Merge completed but output file not created: {temp_output}")
+                print(f"Temp directory contents: {os.listdir(tmpdir)}")
+                print("Falling back to basic armature")
+                return create_basic_armature(mesh_obj)
+            
+            file_size = os.path.getsize(temp_output)
+            print(f"Merge complete - output file: {temp_output} ({file_size} bytes)")
+            
         except subprocess.CalledProcessError as e:
             print(f"ERROR: Merge failed: {e}")
             print(f"stdout: {e.stdout}")
