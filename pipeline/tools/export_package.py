@@ -188,20 +188,6 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-    # Root export folder
-    export_root = Path("4_export") / project_name
-    ensure_dir(export_root)
-
-    print(f"\n=== PACKAGING EXPORT: {project_name} ===")
-    print("Output directory:", export_root)
-
-    # ---------------------------------------------------------
-    # 1. Copy retargeted animation
-    # ---------------------------------------------------------
-    anim_dst = export_root / "animation.fbx"
-    copy_if_exists(retargeted_fbx, anim_dst)
-
     # ---------------------------------------------------------
     # 2. Copy rig (if available)
     # ---------------------------------------------------------

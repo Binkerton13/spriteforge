@@ -324,8 +324,9 @@ def main():
         
         if generate_texture_for_tile(comfyui_url, workflow_path, tile_id, tile_config, texture_dir):
             success_count += 1
-            # Save albedo path for PBR generation (assuming ComfyUI saves to texture_dir)
-            albedo_paths[tile_id] = texture_dir / f"texture_{tile_id}.png"
+            # Save albedo path for PBR generation
+            # ComfyUI SaveImage adds frame number to filename_prefix
+            albedo_paths[tile_id] = texture_dir / f"texture_{tile_id}_00001_.png"
             log(f"✓ Diffuse texture generated for tile {tile_id}")
         else:
             log(f"✗ Failed to generate diffuse texture for tile {tile_id}")

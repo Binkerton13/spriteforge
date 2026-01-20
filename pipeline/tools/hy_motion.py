@@ -130,13 +130,21 @@ if __name__ == "__main__":
         print(f"[✔] HY-Motion animation saved to: {args.output}")
     else:
         # Pipeline mode: project_path and config_path arguments
-        if len(sys.argv) < 3:
+        # When called via Blender, args come after '--'
+        import sys
+        args = sys.argv
+        
+        # Find the '--' separator that Blender uses
+        if '--' in args:
+            args = args[args.index('--') + 1:]
+        
+        if len(args) < 2:
             print("ERROR: Missing required arguments")
-            print("Usage: python hy_motion.py <project_path> <config_path>")
+            print("Usage: blender --background --python hy_motion.py -- <project_path> <config_path>")
             sys.exit(1)
         
-        project_path = sys.argv[1]
-        config_path = sys.argv[2]
+        project_path = args[0]
+        config_path = args[1]
         
         # Load configuration
         with open(config_path, 'r') as f:
