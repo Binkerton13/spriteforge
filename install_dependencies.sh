@@ -142,11 +142,11 @@ sed -i '/flash_attn/d' requirements.txt
 # Install dependencies
 echo "Installing UniRig dependencies..."
 if [ -n "$VIRTUAL_ENV" ]; then
-    # Use virtual environment if available
-    pip install -r requirements.txt
+    # Use --no-user to avoid site-packages conflicts
+    pip install --no-user --upgrade -r requirements.txt
 else
     # Use system Python
-    python3 -m pip install -r requirements.txt
+    python3 -m pip install --upgrade -r requirements.txt
 fi
 
 # Download UniRig models if not present
