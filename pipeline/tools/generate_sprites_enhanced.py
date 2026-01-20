@@ -251,11 +251,11 @@ def render_animation_with_controlnets(render_dir, camera_angles, frame_sample=1)
             
             frame_data = {
                 'frame': frame_num,
-                'render': str(maps['render']),
-                'openpose': str(maps['openpose']),
-                'depth': str(maps['depth']),
-                'normal': str(maps['normal']),
-                'canny': str(maps['canny'])
+                'render': str(maps.get('pose', maps.get('render', ''))),
+                'openpose': str(maps.get('pose', maps.get('openpose', ''))),
+                'depth': str(maps.get('depth', '')),
+                'normal': str(maps.get('normal', '')),
+                'canny': str(maps.get('canny', ''))
             }
             
             angle_frames.append(frame_data)
