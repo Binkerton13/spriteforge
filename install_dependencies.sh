@@ -35,25 +35,33 @@ echo ""
 # Find Blender's Python
 BLENDER_PYTHON=""
 
-# Try common Blender installation paths
-POSSIBLE_PATHS=(
-    "/opt/blender-4.0.2-linux-x64/4.0/python/bin/python3.10"
-    "/opt/blender/4.0/python/bin/python3.10"
-    "/opt/blender-4.0/python/bin/python3.10"
-    "/usr/local/blender/4.0/python/bin/python3.10"
+# Try common Blender installation base directories
+POSSIBLE_BASES=(
+    "/opt/blender-4.0.2-linux-x64"
+    "/opt/blender-4.0-linux-x64"
+    "/opt/blender"
+    "/opt/blender-4.0"
+    "/usr/local/blender"
 )
 
-for path in "${POSSIBLE_PATHS[@]}"; do
-    if [ -f "$path" ]; then
-        BLENDER_PYTHON="$path"
-        break
+echo "Searching for Blender Python interpreter..."
+
+for base in "${POSSIBLE_BASES[@]}"; do
+    if [ -d "$base" ]; then
+        echo "Checking: $base"
+        # Look for python3.* in the bin directory
+        FOUND=$(find "$base" -path "*/python/bin/python3.*" -type f 2>/dev/null | grep -v "python3.*-config" | head -n1)
+        if [ -n "$FOUND" ]; then
+            BLENDER_PYTHON="$FOUND"
+            echo "Found Python at: $BLENDER_PYTHON"
+            break
+        fi
     fi
 done
 
-# If not found in common paths, search
+# If not found in common paths, search using which blender
 if [ -z "$BLENDER_PYTHON" ]; then
-    echo -e "${YELLOW}Blender Python not found in common locations${NC}"
-    echo "Searching for Blender installation..."
+    echo "Not found in common paths, searching via blender binary..."
     
     # Try to find Blender
     BLENDER_PATH=$(which blender 2>/dev/null || echo "")
@@ -62,16 +70,29 @@ if [ -z "$BLENDER_PYTHON" ]; then
         exit 1
     fi
     
+    echo "Blender binary at: $BLENDER_PATH"
+    
     # Get Blender's Python path - follow symlink to real installation
     BLENDER_REAL=$(readlink -f "$BLENDER_PATH")
     BLENDER_DIR=$(dirname $(dirname "$BLENDER_REAL"))
-    BLENDER_PYTHON=$(find "$BLENDER_DIR" -path "*/python/bin/python3.*" -type f 2>/dev/null | head -n1)
+    
+    echo "Blender real path: $BLENDER_REAL"
+    echo "Searching in: $BLENDER_DIR"
+    
+    BLENDER_PYTHON=$(find "$BLENDER_DIR" -path "*/python/bin/python3.*" -type f 2>/dev/null | grep -v "python3.*-config" | head -n1)
     
     if [ -z "$BLENDER_PYTHON" ]; then
         echo -e "${RED}ERROR: Could not locate Blender's Python interpreter${NC}"
-        echo "Blender found at: $BLENDER_PATH"
-        echo "Real path: $BLENDER_REAL"
-        echo "Searched in: $BLENDER_DIR"
+        echo ""
+        echo "Debug information:"
+        echo "  Blender binary: $BLENDER_PATH"
+        echo "  Real path: $BLENDER_REAL"
+        echo "  Search directory: $BLENDER_DIR"
+        echo ""
+        echo "Directory contents:"
+        ls -la "$BLENDER_DIR" 2>/dev/null || echo "  Cannot list directory"
+        echo ""
+        echo "Please report this issue with the above information."
         exit 1
     fi
 fi
