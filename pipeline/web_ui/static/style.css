@@ -505,6 +505,59 @@ body {
     cursor: pointer;
 }
 
+/* Sprite reference preview */
+.reference-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    min-height: 40px;
+}
+
+.reference-preview img {
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.reference-preview img:hover {
+    transform: scale(1.1);
+}
+
+/* Advanced settings details/summary */
+details {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent-primary);
+    user-select: none;
+    padding: 0.25rem 0;
+}
+
+details summary:hover {
+    color: var(--accent-hover);
+}
+
+details[open] {
+    padding-bottom: 1rem;
+}
+
+details[open] summary {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
 .reference-summary {
     display: flex;
     flex-direction: column;

@@ -950,6 +950,86 @@ function toggleSpriteOptions(enabled) {
     }
 }
 
+// Sprite quality preset definitions
+const spriteQualityPresets = {
+    fast: { resolution: 256, fps: 12, steps: 4, model: 'sdxl-turbo' },
+    balanced: { resolution: 512, fps: 16, steps: 8, model: 'sdxl-lightning' },
+    high: { resolution: 512, fps: 24, steps: 20, model: 'sdxl' },
+    ultra: { resolution: 1024, fps: 30, steps: 30, model: 'sdxl' }
+};
+
+// Camera preset definitions (azimuth angles at specified elevation)
+const spriteCameraPresets = {
+    isometric_4way: { angles: [45, 135, 225, 315], elevation: 30, name: 'Isometric 4-way' },
+    isometric_8way: { angles: [0, 45, 90, 135, 180, 225, 270, 315], elevation: 30, name: 'Isometric 8-way' },
+    threequarter_8way: { angles: [0, 45, 90, 135, 180, 225, 270, 315], elevation: 25, name: '3/4 View 8-way' },
+    sidescroller_2way: { angles: [90, 270], elevation: 0, name: 'Side-scroller 2-way' }
+};
+
+function updateQualitySettings() {
+    const preset = document.getElementById('spriteQualityPreset')?.value;
+    if (!preset || !spriteQualityPresets[preset]) return;
+    
+    const settings = spriteQualityPresets[preset];
+    
+    // Update resolution if set to auto
+    const resolutionSelect = document.getElementById('spriteResolution');
+    if (resolutionSelect && resolutionSelect.value === 'auto') {
+        console.log(`Quality preset ${preset}: ${settings.resolution}px, ${settings.fps}fps, ${settings.steps} steps`);
+    }
+    
+    // Update frame rate if set to auto
+    const fpsSelect = document.getElementById('spriteFrameRate');
+    if (fpsSelect && fpsSelect.value === 'auto') {
+        console.log(`Using ${settings.fps} fps from preset`);
+    }
+}
+
+function updateCameraAngles() {
+    const preset = document.getElementById('spriteCameraPreset')?.value;
+    if (!preset || !spriteCameraPresets[preset]) return;
+    
+    const settings = spriteCameraPresets[preset];
+    console.log(`Camera preset ${preset}: ${settings.angles.length} angles at ${settings.elevation}° elevation`);
+}
+
+// Handle sprite reference image uploads
+let spriteReferenceImages = [];
+
+function handleSpriteReferenceDrop(event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+    const files = event.dataTransfer.files;
+    handleSpriteReferenceFiles(files);
+}
+
+function handleSpriteReferenceFiles(files) {
+    const preview = document.getElementById('spriteReferencePreview');
+    if (!preview) return;
+    
+    Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        
+        spriteReferenceImages.push(file);
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.maxWidth = '100px';
+            img.style.maxHeight = '100px';
+            img.style.margin = '5px';
+            img.style.border = '2px solid var(--primary)';
+            img.style.borderRadius = '4px';
+            img.title = file.name;
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    console.log(`Loaded ${spriteReferenceImages.length} reference images for IP-Adapter`);
+}
+
 // ===================================
 // File Upload Handling
 // ===================================
@@ -1429,13 +1509,6 @@ async function saveConfig() {
     const config = {
         project_name: currentProject,
         mesh_type: currentMeshType,
-        udim_tiles: {
-            "1001": {
-                prompt: document.getElementById('texturePrompt').value,
-                negative: document.getElementById('textureNegative').value,
-                seed: parseInt(document.getElementById('textureSeed').value)
-            }
-        },
         unirig: {
             scale: parseFloat(document.getElementById('rigScale').value),
             orientation: document.getElementById('rigOrientation').value,
@@ -1444,17 +1517,29 @@ async function saveConfig() {
         hy_motion_prompt: animationConfig,
         sprite_generation: {
             enabled: document.getElementById('enableSprites')?.checked || false,
-            frame_interval: parseInt(document.getElementById('spriteFrameInterval')?.value || 2),
-            angles: Array.from(document.getElementById('spriteAngles')?.selectedOptions || []).map(opt => opt.value),
+            quality_preset: document.getElementById('spriteQualityPreset')?.value || 'balanced',
+            camera_preset: document.getElementById('spriteCameraPreset')?.value || 'isometric_4way',
             character_prompt: document.getElementById('spriteCharacterPrompt')?.value || '',
             negative_prompt: document.getElementById('spriteNegativePrompt')?.value || '',
-            resolution: parseInt(document.getElementById('spriteResolution')?.value || 768),
-            generate_spritesheet: document.getElementById('spriteSpritesheet')?.checked || true
+            resolution: document.getElementById('spriteResolution')?.value || 'auto',
+            frame_rate: document.getElementById('spriteFrameRate')?.value || 'auto',
+            style_tags: {
+                stylized: document.getElementById('styleStylized')?.checked || false,
+                cel_shaded: document.getElementById('styleCelShaded')?.checked || false,
+                painterly: document.getElementById('stylePainterly')?.checked || false,
+                hand_drawn: document.getElementById('styleHandDrawn')?.checked || false,
+                pixel_art: document.getElementById('stylePixelArt')?.checked || false
+            },
+            seed: document.getElementById('spriteSeed')?.value || null,
+            background_removal: document.getElementById('spriteBackgroundRemoval')?.checked !== false,
+            shadow_baking: document.getElementById('spriteShadowBaking')?.checked !== false,
+            generate_spritesheet: document.getElementById('spriteSpritesheet')?.checked !== false,
+            reference_images: spriteReferenceImages.map(f => f.name) // Track reference image names
         },
         export_formats: {
-            fbx: document.getElementById('exportFBX').checked,
-            gltf: document.getElementById('exportGLTF').checked,
-            usd: document.getElementById('exportUSD').checked
+            fbx: document.getElementById('exportFBX')?.checked || false,
+            gltf: document.getElementById('exportGLTF')?.checked || false,
+            usd: document.getElementById('exportUSD')?.checked || false
         }
     };
     

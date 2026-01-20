@@ -86,17 +86,17 @@
 
                 <!-- Style References -->
                 <div class="upload-section">
-                    <h3 title="Upload reference images for texture style and appearance">Style References</h3>
+                    <h3 title="Upload reference images for character appearance consistency (used by IP-Adapter)">Character References</h3>
                     <div class="drop-zone" id="styleRefDropZone"
                          ondrop="handleDrop(event, 'style_reference')"
                          ondragover="handleDragOver(event)"
                          ondragleave="handleDragLeave(event)"
-                         title="Drop style reference images to guide texture generation">
+                         title="Drop character reference images for consistent appearance in sprite generation">
                         <div class="drop-zone-content">
                             <span class="drop-icon">🎨</span>
-                            <p>Style/texture references</p>
+                            <p>Character references (for sprite consistency)</p>
                             <input type="file" id="styleRefInput" accept="image/*" multiple onchange="handleFileSelect(event, 'style_reference')" style="display: none">
-                            <button class="btn btn-small" onclick="document.getElementById('styleRefInput').click()" title="Browse for style references">Browse</button>
+                            <button class="btn btn-small" onclick="document.getElementById('styleRefInput').click()" title="Browse for character references">Browse</button>
                         </div>
                         <div id="styleRefList" class="file-list"></div>
                     </div>
@@ -201,23 +201,9 @@
                     </div>
                 </div>
 
-                <!-- Texture Prompts -->
-                 <!-- IAW prompt_lbrary.json -->
-                <div class="config-section">
-                    <h3>Texture Generation</h3>
-                    <div class="form-group">
-                        <label for="texturePrompt" title="Describe the desired texture appearance and details">Positive Prompt</label>
-                        <textarea id="texturePrompt" rows="3" placeholder="skin texture, realistic pores, high detail" title="Keywords and descriptions for the AI to generate"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="textureNegative" title="Specify what to avoid in the texture">Negative Prompt</label>
-                        <textarea id="textureNegative" rows="2" placeholder="distortion, artifacts, blur" title="Keywords for the AI to avoid"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="textureSeed" title="Random seed for reproducible results">Seed</label>
-                        <input type="number" id="textureSeed" value="12345" title="Use the same seed to reproduce exact results">
-                    </div>
-                </div>
+                <!-- Texture Generation - ARCHIVED -->
+                <!-- Texture generation removed - use archive/texture_generation/ if needed -->
+                <!-- Pipeline now focuses on sprite generation for 3D action games -->
 
                 <!-- Rig Settings -->
                 <div class="config-section">
@@ -310,7 +296,7 @@
 
                 <!-- Sprite Generation -->
                 <div class="config-section" id="spriteSection">
-                    <h3>2D Sprite Generation</h3>
+                    <h3>2D Sprite Generation (3D Action Game Style)</h3>
                     
                     <div class="form-group">
                         <label>
@@ -320,51 +306,123 @@
                     </div>
                     
                     <div id="spriteOptions" style="display: none;">
+                        <!-- Quality Preset -->
                         <div class="form-group">
-                            <label for="spriteFrameInterval">Frame Interval</label>
-                            <select id="spriteFrameInterval">
-                                <option value="1">Every Frame (30fps)</option>
-                                <option value="2" selected>Every 2nd Frame (15fps)</option>
-                                <option value="3">Every 3rd Frame (10fps)</option>
-                                <option value="4">Every 4th Frame (7.5fps)</option>
+                            <label for="spriteQualityPreset">Quality Preset</label>
+                            <select id="spriteQualityPreset" onchange="updateQualitySettings()">
+                                <option value="fast">Fast Prototype (256px, 12fps, ~2-3 sec/frame)</option>
+                                <option value="balanced" selected>Balanced (512px, 16fps, ~5-8 sec/frame)</option>
+                                <option value="high">High Quality (512px, 24fps, ~15-20 sec/frame)</option>
+                                <option value="ultra">Ultra Quality (1024px, 30fps, ~30-40 sec/frame)</option>
                             </select>
+                            <small>Affects resolution, frame rate, and AI steps</small>
                         </div>
-                        
+
+                        <!-- Camera Preset -->
                         <div class="form-group">
-                            <label for="spriteAngles">Camera Angles</label>
-                            <select id="spriteAngles" multiple size="4">
-                                <option value="front" selected>Front (0°)</option>
-                                <option value="side" selected>Side (90°)</option>
-                                <option value="back">Back (180°)</option>
-                                <option value="diagonal" selected>Diagonal (45°)</option>
+                            <label for="spriteCameraPreset">Camera Preset</label>
+                            <select id="spriteCameraPreset" onchange="updateCameraAngles()">
+                                <option value="isometric_4way" selected>Isometric 4-way (Diablo style)</option>
+                                <option value="isometric_8way">Isometric 8-way (Full movement)</option>
+                                <option value="threequarter_8way">3/4 View 8-way (More detail)</option>
+                                <option value="sidescroller_2way">Side-scroller 2-way (Platformer)</option>
                             </select>
-                            <small>Hold Ctrl/Cmd to select multiple</small>
+                            <small>Determines viewing angles for sprites</small>
                         </div>
-                        
+
+                        <!-- Character References -->
                         <div class="form-group">
-                            <label for="spriteCharacterPrompt">Character Overlay Prompt</label>
-                            <textarea id="spriteCharacterPrompt" rows="3" placeholder="female character, green hair, ponytail, fantasy armor"></textarea>
-                            <small>3D model used as reference + these modifications</small>
+                            <label for="spriteReferenceImages">Character Reference Images (IP-Adapter)</label>
+                            <div class="drop-zone" id="spriteReferenceDrop" 
+                                 ondrop="handleSpriteReferenceDrop(event)" 
+                                 ondragover="event.preventDefault()" 
+                                 ondragenter="event.currentTarget.classList.add('drag-over')" 
+                                 ondragleave="event.currentTarget.classList.remove('drag-over')">
+                                <p>Drop character reference images here</p>
+                                <p style="font-size: 0.85em; color: var(--text-secondary);">For consistent character appearance</p>
+                                <input type="file" id="spriteReferenceImages" accept="image/*" multiple style="display: none;" onchange="handleSpriteReferenceFiles(this.files)">
+                                <button type="button" onclick="document.getElementById('spriteReferenceImages').click()" class="btn-secondary">Select Files</button>
+                            </div>
+                            <div id="spriteReferencePreview" class="reference-preview"></div>
                         </div>
-                        
+
+                        <!-- Character Prompt -->
                         <div class="form-group">
-                            <label for="spriteNegativePrompt">Negative Prompt</label>
-                            <textarea id="spriteNegativePrompt" rows="2" placeholder="low quality, blurry, distorted"></textarea>
+                            <label for="spriteCharacterPrompt">Character Appearance Prompt</label>
+                            <textarea id="spriteCharacterPrompt" rows="4" placeholder="female warrior, long red hair, leather armor with metal pauldrons, determined expression, fantasy style"></textarea>
+                            <small>Describe character appearance for AI enhancement (uses 3D model as base)</small>
                         </div>
-                        
+
+                        <!-- Style Tags -->
                         <div class="form-group">
-                            <label for="spriteResolution">Sprite Resolution</label>
-                            <select id="spriteResolution">
-                                <option value="512">512x512</option>
-                                <option value="768" selected>768x768</option>
-                                <option value="1024">1024x1024</option>
-                            </select>
+                            <label>Style Enhancement</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" id="styleStylized" checked> Stylized Realistic</label>
+                                <label><input type="checkbox" id="styleCelShaded"> Cel-Shaded</label>
+                                <label><input type="checkbox" id="stylePainterly"> Painterly</label>
+                                <label><input type="checkbox" id="styleHandDrawn"> Hand-Drawn</label>
+                                <label><input type="checkbox" id="stylePixelArt"> Pixel Art</label>
+                            </div>
                         </div>
-                        
+
+                        <!-- Advanced Settings (collapsible) -->
+                        <details>
+                            <summary>Advanced Settings</summary>
+                            
+                            <div class="form-group">
+                                <label for="spriteResolution">Output Resolution Override</label>
+                                <select id="spriteResolution">
+                                    <option value="auto" selected>Auto (from quality preset)</option>
+                                    <option value="256">256x256</option>
+                                    <option value="512">512x512</option>
+                                    <option value="768">768x768</option>
+                                    <option value="1024">1024x1024</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="spriteFrameRate">Frame Rate Override</label>
+                                <select id="spriteFrameRate">
+                                    <option value="auto" selected>Auto (from quality preset)</option>
+                                    <option value="8">8 fps</option>
+                                    <option value="12">12 fps</option>
+                                    <option value="16">16 fps</option>
+                                    <option value="24">24 fps</option>
+                                    <option value="30">30 fps</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="spriteNegativePrompt">Negative Prompt</label>
+                                <textarea id="spriteNegativePrompt" rows="2" placeholder="low quality, blurry, distorted, deformed, bad anatomy, extra limbs"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="spriteSeed">Random Seed</label>
+                                <input type="number" id="spriteSeed" placeholder="Random (leave empty)" min="-1">
+                                <small>Set specific seed for reproducible results</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="spriteBackgroundRemoval" checked>
+                                    Remove background (transparent sprites)
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="spriteShadowBaking" checked>
+                                    Bake contact shadows
+                                </label>
+                            </div>
+                        </details>
+
+                        <!-- Sprite Sheet Options -->
                         <div class="form-group">
                             <label>
                                 <input type="checkbox" id="spriteSpritesheet" checked>
-                                Generate spritesheets (combined frames)
+                                Generate sprite sheets (combined frames per angle)
                             </label>
                         </div>
                     </div>
@@ -578,8 +636,8 @@
                 <div class="workflow-selector">
                     <label>Workflow:</label>
                     <select id="workflowSelect" onchange="loadWorkflowModels(this.value)">
-                        <option value="texture_workflow">Texture Generation</option>
-                        <option value="sprite_generation_workflow">Sprite Generation</option>
+                        <option value="sprite_generation_enhanced">Enhanced Sprite Generation</option>
+                        <option value="sprite_generation_workflow">Basic Sprite Generation</option>
                     </select>
                 </div>
                 
