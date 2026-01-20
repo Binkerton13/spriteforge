@@ -26,6 +26,13 @@ class PipelineOrchestrator:
         
         # Define pipeline stages
         self.stages = {
+            'prep': {
+                'name': 'Mesh Preparation',
+                'required_for': ['skeletal', 'static'],
+                'script': 'tools/prepare_mesh.py',
+                'input_dir': '0_input',
+                'output_dir': '0_input'  # Overwrites input with prepared mesh
+            },
             'textures': {
                 'name': 'Texture Generation',
                 'required_for': ['skeletal', 'static'],
@@ -82,7 +89,10 @@ class PipelineOrchestrator:
             return False
         
         # Check for relevant output files
-        if stage_name == 'textures':
+        if stage_name == 'prep':
+            # Prep stage always runs to ensure UV unwrapping
+            return False
+        elif stage_name == 'textures':
             # Look for texture images
             return any(output_dir.glob('*.png')) or any(output_dir.glob('*.jpg'))
         elif stage_name == 'rigging':
@@ -156,16 +166,33 @@ class PipelineOrchestrator:
             self.log(f"  This stage is not yet implemented")
             return False
         
-        if stage_name in ['rigging', 'animation', 'sprites']:
-            # Blender scripts
-            cmd = [
-                'blender',
-                '--background',
-                '--python', str(script_path),
-                '--',
-                str(self.project_path),
-                str(self.config_path)
-            ]
+        if stage_name in ['prep', 'rigging', 'animation', 'sprites']:
+            # Blender scripts - need input/output mesh paths
+            if stage_name == 'prep':
+                input_dir = self.project_path / stage['input_dir']
+                input_mesh = next(input_dir.glob('*.fbx'), next(input_dir.glob('*.obj'), None))
+                if not input_mesh:
+                    self.log(f"  ✗ No input mesh found in {input_dir}")
+                    return False
+                output_mesh = input_dir / f"{input_mesh.stem}_prepared.fbx"
+                cmd = [
+                    'blender',
+                    '--background',
+                    '--python', str(script_path),
+                    '--',
+                    str(input_mesh),
+                    str(output_mesh)
+                ]
+            else:
+                # Other Blender scripts use project path and config
+                cmd = [
+                    'blender',
+                    '--background',
+                    '--python', str(script_path),
+                    '--',
+                    str(self.project_path),
+                    str(self.config_path)
+                ]
         else:
             # Python scripts
             cmd = [
@@ -247,9 +274,9 @@ class PipelineOrchestrator:
         
         # Define stage execution order
         if self.mesh_type == 'static':
-            stages_to_run = ['textures', 'export']
+            stages_to_run = ['prep', 'textures', 'export']
         else:  # skeletal
-            stages_to_run = ['textures', 'rigging', 'animation', 'export', 'sprites']
+            stages_to_run = ['prep', 'textures', 'rigging', 'animation', 'export', 'sprites']
         
         # Execute stages
         for stage_name in stages_to_run:
