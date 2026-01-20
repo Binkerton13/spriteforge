@@ -81,7 +81,18 @@ def setup_render_settings(resolution, transparent_bg=True, samples=64):
     """Configure Blender render settings for sprite generation"""
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
+    
+    # Enable GPU rendering
     scene.cycles.device = 'GPU'
+    
+    # Enable all available CUDA/OptiX devices
+    prefs = bpy.context.preferences.addons['cycles'].preferences
+    prefs.compute_device_type = 'CUDA'  # or 'OPTIX' for RTX cards
+    prefs.get_devices()
+    
+    for device in prefs.devices:
+        device.use = True  # Enable all GPUs
+    
     scene.cycles.samples = samples
     scene.render.resolution_x = resolution[0]
     scene.render.resolution_y = resolution[1]
