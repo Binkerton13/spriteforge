@@ -26,12 +26,20 @@ def generate_animation(project_path: Path, config: dict):
     rigged_mesh = rigged_files[0]
     print(f"Using rigged mesh: {rigged_mesh.name}")
     
-    # Get animation configuration
-    anim_config = config.get('animation', {})
-    selected_animations = anim_config.get('selected_animations', [])
+    # Get animation configuration from hy_motion_prompt
+    hy_motion_config = config.get('hy_motion_prompt', {})
+    anim_mode = hy_motion_config.get('mode', 'library')
     
-    print(f"\nAnimation config: {anim_config}")
-    print(f"Selected animations from config: {selected_animations}")
+    # Get selected animations based on mode
+    if anim_mode == 'library':
+        selected_animations = hy_motion_config.get('selections', [])
+    else:
+        # Custom prompt mode - use the custom fields
+        selected_animations = []
+    
+    print(f"\nHY-Motion config: {hy_motion_config}")
+    print(f"Animation mode: {anim_mode}")
+    print(f"Selected animations: {selected_animations}")
     
     if not selected_animations:
         print("WARNING: No animations selected in config")

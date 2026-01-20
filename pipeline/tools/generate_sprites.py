@@ -10,7 +10,20 @@ from pathlib import Path
 import subprocess
 import time
 import requests
-from PIL import Image
+
+# Check for PIL/Pillow availability
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    print("=" * 70)
+    print("WARNING: PIL/Pillow not available in Blender's Python environment")
+    print("Sprite generation requires Pillow to be installed.")
+    print("To install: /opt/blender/4.0/python/bin/python3.10 -m pip install Pillow")
+    print("Alternatively, sprites can be generated using external tools.")
+    print("=" * 70)
+    sys.exit(0)  # Exit gracefully without error
 
 # Blender Python API imports
 try:
