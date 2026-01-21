@@ -102,7 +102,7 @@ echo "Found Blender Python: $BLENDER_PYTHON"
 # Install Pillow, PyYAML, and tqdm for Blender's Python
 echo "Installing Pillow, PyYAML, and tqdm..."
 $BLENDER_PYTHON -m pip install --upgrade pip
-$BLENDER_PYTHON -m pip install Pillow pyyaml tqdm python-box scipy
+$BLENDER_PYTHON -m pip install Pillow pyyaml tqdm python-box scipy trimesh fast_simplification
 
 # Verify installations
 echo "Verifying Pillow installation..."
@@ -115,8 +115,12 @@ echo "Verifying python-box installation..."
 $BLENDER_PYTHON -c "import python_box; print(f'python-box {python_box.__version__} installed successfully')"
 echo "Verifying scipy installation..."
 $BLENDER_PYTHON -c "import scipy; print(f'scipy {scipy.__version__} installed successfully')"
+echo "Verifying trimesh installation..."
+$BLENDER_PYTHON -c "import trimesh; print(f'trimesh {trimesh.__version__} installed successfully')"
+echo "Verifying fast_simplification installation..."
+$BLENDER_PYTHON -c "import fast_simplification; print(f'fast_simplification {fast_simplification.__version__} installed successfully')"
 
-echo -e "${GREEN}✓ Pillow, PyYAML, python-box, tqdm, and scipy installed successfully${NC}"
+echo -e "${GREEN}✓ Pillow, PyYAML, python-box, tqdm, scipy, trimesh, and fast_simplification installed successfully${NC}"
 echo ""
 
 

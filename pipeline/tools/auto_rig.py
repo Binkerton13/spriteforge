@@ -235,10 +235,10 @@ def apply_unirig(mesh_obj, config):
             (
                 "import sys, os; "
                 "sys.path.append('/workspace/unirig'); "
-                "from src.inference.merge import main; "
-                f"main(source=r'{temp_skin}', target=r'{temp_input}', output=r'{temp_output}')"
+                "from src.inference.merge import merge; "
+                f"merge(source=r'{temp_skin}', target=r'{temp_input}', output=r'{temp_output}')"
             )
-        ]        
+        ]       
         try:
             result = subprocess.run(merge_cmd, check=True, capture_output=True, text=True)
             print("Merge command completed")
