@@ -102,7 +102,7 @@ echo "Found Blender Python: $BLENDER_PYTHON"
 # Install Pillow, PyYAML, and tqdm for Blender's Python
 echo "Installing Pillow, PyYAML, and tqdm..."
 $BLENDER_PYTHON -m pip install --upgrade pip
-$BLENDER_PYTHON -m pip install Pillow pyyaml tqdm
+$BLENDER_PYTHON -m pip install Pillow pyyaml tqdm box
 
 # Verify installations
 echo "Verifying Pillow installation..."
@@ -111,8 +111,10 @@ echo "Verifying PyYAML installation..."
 $BLENDER_PYTHON -c "import yaml; print(f'PyYAML {yaml.__version__} installed successfully')"
 echo "Verifying tqdm installation..."
 $BLENDER_PYTHON -c "import tqdm; print(f'tqdm {tqdm.__version__} installed successfully')"
+echo "Verifying box installation..."
+$BLENDER_PYTHON -c "import box; print(f'box {box.__version__} installed successfully')"
 
-echo -e "${GREEN}✓ Pillow, PyYAML, and tqdm installed successfully${NC}"
+echo -e "${GREEN}✓ Pillow, PyYAML, box, and tqdm installed successfully${NC}"
 echo ""
 
 
