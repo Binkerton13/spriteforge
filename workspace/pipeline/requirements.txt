@@ -16,6 +16,9 @@ Pillow>=10.0.0
 # ComfyUI Integration
 # Note: ComfyUI dependencies installed separately
 
+# YAML support for UniRig merge step
+pyyaml>=6.0
+
 # HY-Motion
 # Note: Install HY-Motion from: https://github.com/Tencent/HunyuanVideo
 # Follow their installation instructions
