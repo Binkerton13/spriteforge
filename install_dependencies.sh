@@ -99,17 +99,23 @@ fi
 
 echo "Found Blender Python: $BLENDER_PYTHON"
 
-# Install Pillow
-echo "Installing Pillow..."
+# Install Pillow and PyYAML for Blender's Python
+echo "Installing Pillow and PyYAML..."
 $BLENDER_PYTHON -m pip install --upgrade pip
-$BLENDER_PYTHON -m pip install Pillow
+$BLENDER_PYTHON -m pip install Pillow pyyaml
 
-# Verify installation
+# Verify installations
 echo "Verifying Pillow installation..."
 $BLENDER_PYTHON -c "from PIL import Image; print(f'Pillow {Image.__version__} installed successfully')"
+echo "Verifying PyYAML installation..."
+$BLENDER_PYTHON -c "import yaml; print(f'PyYAML {yaml.__version__} installed successfully')"
 
-echo -e "${GREEN}✓ Pillow installed successfully${NC}"
+echo -e "${GREEN}✓ Pillow and PyYAML installed successfully${NC}"
 echo ""
+
+echo -e "${GREEN}✓ PyYAML installed successfully${NC}"
+echo ""
+
 
 # ================================================================================
 # 2. Install UniRig
