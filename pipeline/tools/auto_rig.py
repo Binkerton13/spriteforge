@@ -236,7 +236,7 @@ def apply_unirig(mesh_obj, config):
                 "import sys, os; "
                 "sys.path.append('/workspace/unirig'); "
                 "from src.inference.merge import main; "
-                f"main(source='{temp_skin}', target='{temp_input}', output='{temp_output}')"
+                f"main(source=r'{temp_skin}', target=r'{temp_input}', output=r'{temp_output}')"
             )
         ]        
         try:
