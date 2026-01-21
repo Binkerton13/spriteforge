@@ -185,6 +185,15 @@ fi
 echo -e "${GREEN}✓ UniRig installed successfully${NC}"
 echo ""
 
+# Install correct Transformers version into user site-packages
+pip install --user "transformers==4.41.2"
+
+# Ensure our custom sitecustomize.py is always loaded
+export PYTHONPATH="/workspace/pipeline/env_patches:$PYTHONPATH"
+
+# Persist for future shells
+echo 'export PYTHONPATH="/workspace/pipeline/env_patches:$PYTHONPATH"' >> ~/.bashrc
+
 # ================================================================================
 # 3. Install HY-Motion
 # ================================================================================
