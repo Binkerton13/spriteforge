@@ -4,7 +4,7 @@
 
 set -e  # Exit on error
 
-COMFYUI_DIR="${COMFYUI_DIR:-/workspace/ComfyUI}"
+COMFYUI_DIR="${COMFYUI_DIR:-/workspace}"
 CUSTOM_NODES_DIR="$COMFYUI_DIR/custom_nodes"
 
 echo "=========================================="
