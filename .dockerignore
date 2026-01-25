@@ -1,65 +1,104 @@
-.git
-.gitignore
+# ------------------------------
+# Python cache / build artifacts
+# ------------------------------
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*.so
+*.egg-info/
+*.egg
+build/
+dist/
+pip-wheel-metadata/
+
+# ------------------------------
+# Virtual environments
+# ------------------------------
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ------------------------------
+# Jupyter / IPython
+# ------------------------------
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# ------------------------------
+# Logs / temp files
+# ------------------------------
+*.log
+*.tmp
 *.swp
 *.swo
-*.tmp
-*.log
-*.zip
-*.tar
-*.tar.gz
-*.xz
-*.7z
-*.blend1
-*.blend2
+
+# ------------------------------
+# System files
+# ------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# Editor / IDE
+# ------------------------------
+.vscode/
+.idea/
+*.code-workspace
+.cursorignore
+.cursorindexingignore
+
+# ------------------------------
+# SpriteForge-specific folders
+# (These should NOT be copied into the container)
+# ------------------------------
+workspace/
+models/
+outputs/
+logs/
+custom_nodes/
+archive/
+
+# ------------------------------
+# ComfyUI runtime folders
+# ------------------------------
+input/
+output/
+temp/
+cache/
+checkpoints/
+controlnet/
+vae/
+unet/
+loras/
+
+# ------------------------------
+# Node modules (if UI uses JS tooling)
+# ------------------------------
 node_modules/
-workspace/
-models/
-outputs/
-venv/
+npm-debug.log
+yarn-error.log
 
-# SpriteForge specific
-workspace/
-models/
-outputs/
-logs/
-custom_nodes/
-archive/
+# ------------------------------
+# Git
+# ------------------------------
+.git/
+.gitignore
+.gitattributes
 
+# ------------------------------
 # Docker
-Dockerfile*
-start.sh
-supervisord.conf
+# ------------------------------
+docker-compose.yml
+DockerFiles/
 *.sh
+!start.sh        # keep start.sh if needed in container
 
-# Ignore test artifacts
+# ------------------------------
+# Tests
+# ------------------------------
 test_*/
 *.test
-
-# Ignore system files
-.DS_Store
-Thumbs.db
-# SpriteForge specific
-workspace/
-models/
-outputs/
-logs/
-custom_nodes/
-archive/
-
-# Docker
-Dockerfile*
-start.sh
-supervisord.conf
-*.sh
-
-# Ignore test artifacts
-test_*/
-*.test
-
-# Ignore system files
-.DS_Store
-Thumbs.db
