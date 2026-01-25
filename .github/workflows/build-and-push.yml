@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - 'spriteforge/Dockerfile.runpod'
+      - 'DockerFiles/spriteforge/Dockerfile.runpod'
       - 'Dockerfile'
       - 'file_browser.py'
       - 'supervisord.conf'
@@ -18,7 +18,7 @@ on:
     branches: [main]
     tags: ['v*']
     paths:
-      - 'spriteforge/Dockerfile.runpod'
+      - 'DockerFiles/spriteforge/Dockerfile.runpod'
       - 'Dockerfile'
       - 'file_browser.py'
       - 'supervisord.conf'
@@ -61,8 +61,8 @@ jobs:
       - name: Verify Dockerfile.runpod builds (CPU only)
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./spriteforge/Dockerfile.runpod
+          context: ./DockerFiles/spriteforge
+          file: Dockerfile.runpod
           platforms: linux/amd64
           push: false
           load: false
@@ -139,8 +139,8 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./spriteforge/Dockerfile.runpod
+          context: ./DockerFiles/spriteforge
+          file: Dockerfile.runpod
           platforms: linux/amd64
           push: true
           tags: ${{ steps.tags.outputs.tags }}
