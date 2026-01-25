@@ -1,3 +1,17 @@
+/* --------------------------------------------------
+   Font Distinction for Titles and Labels
+-------------------------------------------------- */
+h1, h2, h3 {
+    font-family: 'Fira Sans', 'Segoe UI', Arial, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+label, .theme-label {
+    font-family: 'Fira Sans', 'Segoe UI', Arial, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
 /* Theme row and label for theme selector */
 .theme-row {
     margin-top: 10px;
