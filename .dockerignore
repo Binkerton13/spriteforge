@@ -20,3 +20,46 @@ workspace/
 models/
 outputs/
 venv/
+
+# SpriteForge specific
+workspace/
+models/
+outputs/
+logs/
+custom_nodes/
+archive/
+
+# Docker
+Dockerfile*
+start.sh
+supervisord.conf
+*.sh
+
+# Ignore test artifacts
+test_*/
+*.test
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+# SpriteForge specific
+workspace/
+models/
+outputs/
+logs/
+custom_nodes/
+archive/
+
+# Docker
+Dockerfile*
+start.sh
+supervisord.conf
+*.sh
+
+# Ignore test artifacts
+test_*/
+*.test
+
+# Ignore system files
+.DS_Store
+Thumbs.db

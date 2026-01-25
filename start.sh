@@ -1,117 +1,65 @@
 #!/usr/bin/env bash
 set -e
 
-# Activate Python virtual environment
+echo "==============================================="
+echo " SpriteForge – Startup"
+echo "==============================================="
+
+# Activate venv
+echo "Activating virtual environment..."
 source "${VIRTUAL_ENV}/bin/activate"
 
-# Remove old ComfyUI symlink if it exists (from previous version)
-if [ -L "/workspace/ComfyUI" ]; then
-  echo "Removing old ComfyUI symlink..."
-  rm /workspace/ComfyUI
+# Workspace paths
+PIPELINE_SRC="/opt/pipeline"
+PIPELINE_DST="/workspace/pipeline"
+CUSTOM_NODES="/workspace/custom_nodes"
+COMFY_MODELS="/workspace/models"
+HY_MOTION="/workspace/hy-motion"
+
+# Ensure workspace directories exist
+echo "Ensuring workspace directories exist..."
+mkdir -p "$PIPELINE_DST" \
+         "$CUSTOM_NODES" \
+         "$COMFY_MODELS" \
+         /workspace/animations \
+         /workspace/sprites \
+         /workspace/logs
+
+# Copy pipeline to workspace on first run
+if [ ! -f "$PIPELINE_DST/.initialized" ]; then
+    echo "Copying SpriteForge pipeline into workspace..."
+    cp -r "$PIPELINE_SRC/"* "$PIPELINE_DST/"
+    touch "$PIPELINE_DST/.initialized"
 fi
 
-# Setup persistent ComfyUI directories
-if [ ! -d "/workspace/ComfyUI/models" ]; then
-  echo "Creating persistent ComfyUI models directory structure..."
-  mkdir -p /workspace/ComfyUI/models/{checkpoints,loras,vae,controlnet,ipadapter,embeddings,upscale_models,clip_vision}
-  chown -R app:app /workspace/ComfyUI || true
-fi
+# Run dependency installer (idempotent)
+echo "Running dependency installer..."
+bash "$PIPELINE_DST/install_dependencies.sh"
 
-# Create custom_nodes directory if it doesn't exist
-if [ ! -d "/workspace/custom_nodes" ]; then
-  echo "Creating persistent custom_nodes directory..."
-  mkdir -p /workspace/custom_nodes
-  chown -R app:app /workspace/custom_nodes || true
-fi
+# Symlink ComfyUI models + custom nodes
+echo "Linking ComfyUI models and custom nodes..."
+rm -rf /opt/comfyui/models
+rm -rf /opt/comfyui/custom_nodes
 
-# Install default custom nodes if directory is empty
-if [ -z "$(ls -A /workspace/custom_nodes)" ]; then
-  echo "Installing default ComfyUI custom nodes..."
-  cd /workspace/custom_nodes
-  git clone https://github.com/ltdrdata/ComfyUI-Manager.git || echo "Failed to clone ComfyUI-Manager"
-  git clone https://github.com/cubiq/ComfyUI_essentials.git || echo "Failed to clone ComfyUI_essentials"
-  git clone https://github.com/WASasquatch/was-node-suite-comfyui.git || echo "Failed to clone was-node-suite-comfyui"
-  chown -R app:app /workspace/custom_nodes || true
-  echo "Default custom nodes installed"
-fi
+ln -s "$COMFY_MODELS" /opt/comfyui/models
+ln -s "$CUSTOM_NODES" /opt/comfyui/custom_nodes
 
-# Symlink ComfyUI models directory to persistent storage
-if [ ! -L "/opt/comfyui/models" ] && [ -d "/opt/comfyui/models" ]; then
-  echo "Linking ComfyUI models to persistent storage..."
-  # Backup original models directory if it has content
-  if [ "$(ls -A /opt/comfyui/models)" ]; then
-    mv /opt/comfyui/models /opt/comfyui/models.original
-  else
-    rm -rf /opt/comfyui/models
-  fi
-  ln -s /workspace/ComfyUI/models /opt/comfyui/models
-fi
-
-# Ensure custom_nodes symlink exists
-if [ ! -L "/opt/comfyui/custom_nodes" ]; then
-  echo "Linking ComfyUI custom_nodes to persistent storage..."
-  if [ -d "/opt/comfyui/custom_nodes" ]; then
-    rm -rf /opt/comfyui/custom_nodes
-  fi
-  ln -s /workspace/custom_nodes /opt/comfyui/custom_nodes
-fi
-
-# Copy pipeline files to workspace if not already there
-if [ ! -d "/workspace/pipeline" ]; then
-  echo "Copying pipeline to /workspace..."
-  cp -r /opt/pipeline /workspace/
-  cp -r /opt/config /workspace/
-  chown -R app:app /workspace/pipeline /workspace/config || true
-fi
-
-# ================================================================================
-# Run dependency installer (UniRig, HY-Motion, Blender deps, Transformers fix)
-# ================================================================================
-
-if [ -f "/workspace/pipeline/install_dependencies.sh" ]; then
-  echo "Running install_dependencies.sh..."
-  bash /workspace/pipeline/install_dependencies.sh
-else
-  echo "WARNING: install_dependencies.sh not found at /workspace/pipeline/"
-fi
-
-# Download models if requested
-if [ "${MODEL_DOWNLOAD_ON_START:-0}" = "1" ]; then
-  echo "MODEL_DOWNLOAD_ON_START=1: downloading configured model URLs"
-  if [ -n "${MODEL_URLS}" ]; then
-    echo "${MODEL_URLS}" | tr "," '\n' | while read url; do
-      url="$(echo "$url" | xargs)"
-      if [ -n "$url" ]; then
-        fname="$(basename "$url")"
-        mkdir -p /workspace/models/3d
-        curl -L --retry 3 -o "/workspace/models/3d/$fname" "$url" || echo "download failed: $url"
-      fi
-    done
-  fi
-fi
-
-# Run git lfs pull for repos
-for repo in comfyui unirig triposr hy-motion; do
-  if [ -d "/workspace/$repo/.git" ]; then
-    echo "Running git lfs pull in /workspace/$repo"
-    git -C "/workspace/$repo" lfs pull || true
-  fi
-done
-
-# Print CUDA info
+# GPU info
+echo "Checking CUDA availability..."
 python - <<EOF
 import torch
 print("CUDA available:", torch.cuda.is_available())
 print("Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")
 EOF
 
-# Print service info
-echo "========================================"
-echo "Starting 3D AI Workstation Services:"
-echo "  ComfyUI: Port ${PORT:-8188}"
-echo "  File Browser: Port ${FILE_BROWSER_PORT:-8080}"
-echo "  Pipeline GUI: Port ${PIPELINE_GUI_PORT:-7860}"
-echo "========================================"
+echo ""
+echo "==============================================="
+echo " Starting services:"
+echo " - ComfyUI on port ${PORT:-8188}"
+echo " - File Browser on port 8080"
+echo " - SpriteForge GUI on port 5000"
+echo "==============================================="
+echo ""
 
-# Start supervisord from system
-exec /usr/bin/supervisord -c /etc/supervisord.conf
+# Launch supervisor (runs all services)
+exec supervisord -c /etc/supervisord.conf

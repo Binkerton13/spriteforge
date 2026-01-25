@@ -1,0 +1,43 @@
+{
+    "nodes": [
+        {
+            "id": 1,
+            "type": "LoadImageSequence",
+            "inputs": {
+                "directory": "@frames_dir"
+            },
+            "outputs": {}
+        },
+        {
+            "id": 2,
+            "type": "IPAdapterApply",
+            "inputs": {
+                "image": "@character_name"
+            },
+            "outputs": {}
+        },
+        {
+            "id": 3,
+            "type": "AnimateDiffEvolved",
+            "inputs": {
+                "frames": [1, 0],
+                "ip_adapter": [2, 0]
+            },
+            "outputs": {}
+        },
+        {
+            "id": 4,
+            "type": "SaveImage",
+            "inputs": {
+                "images": [3, 0],
+                "directory": "@output_dir"
+            },
+            "outputs": {}
+        }
+    ],
+    "connections": [
+        [1, 0, 3, 0],
+        [2, 0, 3, 1],
+        [3, 0, 4, 0]
+    ]
+}

@@ -1,0 +1,281 @@
+/* Theme row and label for theme selector */
+.theme-row {
+    margin-top: 10px;
+}
+.theme-label {
+    margin-right: 10px;
+}
+
+/* Hide video player by default, show when needed */
+.video-player {
+    display: none;
+    margin-top: 10px;
+}
+
+/* Sprite sheet image styling */
+.sheet-image {
+    max-width: 100%;
+    display: none;
+    margin-top: 10px;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+}
+/* --------------------------------------------------
+   Base Variables (default values)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #222222;
+    --panel-bg: #ffffff;
+    --panel-border: #dddddd;
+    --panel-shadow: rgba(0,0,0,0.05);
+    --input-bg: #ffffff;
+    --input-border: #cccccc;
+    --code-bg: #f0f2f5;
+    --code-border: #dddddd;
+    --accent: #4a90e2;
+    --accent-text: #ffffff;
+    --transition-speed: 0.25s;
+}
+
+/* Smooth transitions */
+* {
+    transition: background var(--transition-speed),
+                color var(--transition-speed),
+                border-color var(--transition-speed);
+}
+
+/* --------------------------------------------------
+   Light Theme
+-------------------------------------------------- */
+
+:root[data-theme="light"] {
+    --bg: #f5f6fa;
+    --text: #222;
+    --panel-bg: #ffffff;
+    --panel-border: #ddd;
+    --panel-shadow: rgba(0,0,0,0.05);
+    --input-bg: #fff;
+    --input-border: #ccc;
+    --code-bg: #f0f2f5;
+    --code-border: #ddd;
+    --accent: #4a90e2;
+}
+
+/* --------------------------------------------------
+   Dark Theme
+-------------------------------------------------- */
+
+:root[data-theme="dark"] {
+    --bg: #1b1d22;
+    --text: #e6e6e6;
+    --panel-bg: #23252b;
+    --panel-border: #2f323a;
+    --panel-shadow: rgba(0,0,0,0.4);
+    --input-bg: #2c2f36;
+    --input-border: #3a3d45;
+    --code-bg: #1f2126;
+    --code-border: #33363d;
+    --accent: #4a90e2;
+}
+
+/* --------------------------------------------------
+   Solarized Light
+-------------------------------------------------- */
+
+:root[data-theme="solarized-light"] {
+    --bg: #fdf6e3;
+    --text: #657b83;
+    --panel-bg: #eee8d5;
+    --panel-border: #d6d2c2;
+    --panel-shadow: rgba(0,0,0,0.05);
+    --input-bg: #fdf6e3;
+    --input-border: #d6d2c2;
+    --code-bg: #eee8d5;
+    --code-border: #d6d2c2;
+    --accent: #268bd2;
+}
+
+/* --------------------------------------------------
+   Solarized Dark
+-------------------------------------------------- */
+
+:root[data-theme="solarized-dark"] {
+    --bg: #002b36;
+    --text: #93a1a1;
+    --panel-bg: #073642;
+    --panel-border: #0a3a47;
+    --panel-shadow: rgba(0,0,0,0.4);
+    --input-bg: #073642;
+    --input-border: #0a3a47;
+    --code-bg: #002b36;
+    --code-border: #0a3a47;
+    --accent: #b58900;
+}
+
+/* --------------------------------------------------
+   Custom Theme (user-defined)
+-------------------------------------------------- */
+
+:root[data-theme="custom"] {
+    --bg: var(--custom-bg, #222);
+    --text: var(--custom-text, #eee);
+    --panel-bg: var(--custom-panel-bg, #333);
+    --panel-border: var(--custom-panel-border, #444);
+    --accent: var(--custom-accent, #4a90e2);
+}
+
+/* --------------------------------------------------
+   Global Layout
+-------------------------------------------------- */
+
+body {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+header {
+    background: var(--panel-bg);
+    color: var(--text);
+    padding: 25px 30px;
+    text-align: center;
+    border-bottom: 3px solid var(--accent);
+}
+
+h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 600;
+}
+
+main {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+/* --------------------------------------------------
+   Panels
+-------------------------------------------------- */
+
+.panel {
+    background: var(--panel-bg);
+    padding: 20px 25px;
+    margin-bottom: 25px;
+    border-radius: 10px;
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 2px 4px var(--panel-shadow);
+}
+
+.panel h2 {
+    margin-top: 0;
+    font-size: 22px;
+    color: var(--text);
+    border-left: 4px solid var(--accent);
+    padding-left: 10px;
+}
+
+/* --------------------------------------------------
+   Form Rows
+-------------------------------------------------- */
+
+.row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 10px;
+}
+
+.row label {
+    min-width: 160px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.row input,
+.row select {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 14px;
+    background: var(--input-bg);
+    color: var(--text);
+}
+
+/* --------------------------------------------------
+   Buttons
+-------------------------------------------------- */
+
+button {
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+/* --------------------------------------------------
+   Code Blocks
+-------------------------------------------------- */
+
+pre {
+    background: var(--code-bg);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--code-border);
+    overflow-x: auto;
+    font-size: 13px;
+    max-height: 300px;
+    color: var(--text);
+}
+
+.code-editor {
+    width: 100%;
+    height: 300px;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--code-border);
+    font-family: Consolas, monospace;
+    font-size: 14px;
+    background: var(--code-bg);
+    color: var(--text);
+}
+
+/* --------------------------------------------------
+   Frame Grid
+-------------------------------------------------- */
+
+.frame-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.frame-grid img {
+    border-radius: 6px;
+    border: 1px solid var(--panel-border);
+}
+
+/* --------------------------------------------------
+   Utility
+-------------------------------------------------- */
+
+hr {
+    border: none;
+    border-top: 1px solid var(--panel-border);
+    margin: 20px 0;
+}

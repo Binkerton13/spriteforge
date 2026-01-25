@@ -1,0 +1,45 @@
+{
+    "project_id": "abcd1234",
+    "name": "My Project",
+    "version": 1,
+    "created": "2026-01-24T18:00:00Z",
+    "last_modified": "2026-01-24T18:05:00Z",
+
+    "motion": {
+        "preset": "walk",
+        "seed": 1234,
+        "frames_dir": "/workspace/animations/abcd1234/frames"
+    },
+
+    "sprite": {
+        "character": "Knight",
+        "frames_dir": "/workspace/animations/abcd1234/frames",
+        "style": "sdxl_turbo",
+        "prompt_template": "neutral"
+    },
+
+    "models": {
+        "checkpoint": "sdxl_turbo.safetensors",
+        "lora": "anime_style.safetensors",
+        "vae": null,
+        "controlnet": null,
+        "ipadapter": null
+    },
+
+    "workflow": {
+        "name": "sprite_workflow.json",
+        "json": "{ ... full workflow JSON ... }"
+    },
+
+    "batch": {
+        "motions": [],
+        "characters": [],
+        "styles": []
+    },
+
+    "outputs": {
+        "motion_video": "/workspace/animations/abcd1234/output.mp4",
+        "sprite_frames": "/workspace/sprites/abcd1234/frames",
+        "sprite_sheet": "/workspace/sprites/abcd1234/Knight_sheet.png"
+    }
+}

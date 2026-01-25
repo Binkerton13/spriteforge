@@ -2,14 +2,14 @@
 set -e
 
 ###############################################################################
-# RunPod 3D Pipeline – Dependency Installer (Idempotent, Logged, Versioned)
+# SpriteForge – Dependency Installer (Idempotent, Logged, Versioned)
 ###############################################################################
 
 START_TIME=$(date +%s)
 LOG_FILE="/workspace/pipeline/install.log"
 
 echo "==============================================================================" | tee -a "$LOG_FILE"
-echo "RunPod 3D Pipeline – Dependency Installation" | tee -a "$LOG_FILE"
+echo "SpriteForge – Dependency Installation" | tee -a "$LOG_FILE"
 echo "Timestamp: $(date)" | tee -a "$LOG_FILE"
 echo "==============================================================================" | tee -a "$LOG_FILE"
 echo "" | tee -a "$LOG_FILE"
@@ -20,7 +20,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 ###############################################################################
-# Helper: Check marker file to skip reinstall
+# Marker file to skip reinstall
 ###############################################################################
 
 MARKER="/workspace/pipeline/.deps_installed"
@@ -32,7 +32,7 @@ if [ -f "$MARKER" ]; then
 fi
 
 ###############################################################################
-# Helper: Log + Timer wrapper
+# run_step wrapper with real exit-code capture
 ###############################################################################
 
 run_step() {
@@ -40,64 +40,28 @@ run_step() {
     shift
     echo -e "${YELLOW}→ $label...${NC}" | tee -a "$LOG_FILE"
     local t0=$(date +%s)
+
     "$@" 2>&1 | tee -a "$LOG_FILE"
+    local exit_code=${PIPESTATUS[0]}
+
     local t1=$(date +%s)
+
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${RED}✗ FAILED: $label (exit code $exit_code)${NC}" | tee -a "$LOG_FILE"
+        echo "Stopping installation." | tee -a "$LOG_FILE"
+        exit $exit_code
+    fi
+
     echo -e "${GREEN}✓ Completed: $label in $((t1 - t0))s${NC}" | tee -a "$LOG_FILE"
     echo "" | tee -a "$LOG_FILE"
 }
 
 ###############################################################################
-# 1. Install Blender Python dependencies
-###############################################################################
-
-install_blender_deps() {
-    echo "Locating Blender Python..." | tee -a "$LOG_FILE"
-
-    BLENDER_PYTHON=$(find /opt -path "*/python/bin/python3.*" -type f 2>/dev/null | head -n1)
-
-    if [ -z "$BLENDER_PYTHON" ]; then
-        echo -e "${RED}ERROR: Blender Python not found.${NC}" | tee -a "$LOG_FILE"
-        return 1
-    fi
-
-    echo "Using Blender Python: $BLENDER_PYTHON" | tee -a "$LOG_FILE"
-
-    $BLENDER_PYTHON -m pip install --upgrade pip
-    $BLENDER_PYTHON -m pip install Pillow pyyaml tqdm python-box scipy trimesh fast_simplification
-}
-
-run_step "Installing Blender Python dependencies" install_blender_deps
-
-###############################################################################
-# 2. Install UniRig (idempotent)
-###############################################################################
-
-install_unirig() {
-    local repo="/workspace/unirig"
-
-    if [ -d "$repo" ]; then
-        echo "Updating UniRig..." | tee -a "$LOG_FILE"
-        git -C "$repo" pull
-    else
-        echo "Cloning UniRig..." | tee -a "$LOG_FILE"
-        git clone https://github.com/VAST-AI-Research/UniRig.git "$repo"
-    fi
-
-    cp "$repo/requirements.txt" "$repo/requirements.txt.backup" || true
-    sed -i '/bpy/d' "$repo/requirements.txt"
-    sed -i '/flash_attn/d' "$repo/requirements.txt"
-
-    pip install --user --ignore-installed --upgrade -r "$repo/requirements.txt"
-}
-
-run_step "Installing UniRig" install_unirig
-
-###############################################################################
-# 3. Install HY-Motion (idempotent)
+# 1. Install HY-Motion (idempotent)
 ###############################################################################
 
 install_hymotion() {
-    local repo="/workspace/HY-Motion"
+    local repo="/workspace/hy-motion"
 
     if [ -d "$repo" ]; then
         echo "Updating HY-Motion..." | tee -a "$LOG_FILE"
@@ -107,8 +71,6 @@ install_hymotion() {
         git clone https://github.com/Tencent-Hunyuan/HY-Motion-1.0.git "$repo"
     fi
 
-    ln -sf "$repo" /workspace/hy-motion
-
     if [ -f "$repo/requirements.txt" ]; then
         pip install --user --ignore-installed --upgrade -r "$repo/requirements.txt"
     fi
@@ -117,14 +79,13 @@ install_hymotion() {
 run_step "Installing HY-Motion" install_hymotion
 
 ###############################################################################
-# 4. Install Custom ComfyUI Nodes (idempotent)
+# 2. Install Custom ComfyUI Nodes
 ###############################################################################
 
 run_step "Installing ComfyUI custom nodes" bash /workspace/pipeline/scripts/install_custom_nodes.sh
 
-
 ###############################################################################
-# 5. Transformers Version Enforcement (critical for UniRig)
+# 3. Transformers Version Enforcement
 ###############################################################################
 
 install_transformers_fix() {
@@ -150,7 +111,7 @@ EOF
 run_step "Enforcing Transformers version" install_transformers_fix
 
 ###############################################################################
-# 6. Activate sitecustomize override
+# 4. Activate sitecustomize override
 ###############################################################################
 
 activate_sitecustomize() {

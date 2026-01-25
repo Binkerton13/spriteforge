@@ -1,1 +1,0 @@
-mkdir -p Exhibition/{0_input/{model_source,uv_layouts,reference/{style_images,motion_reference}},1_textures/{albedo,normal,roughness,metallic,ao},2_rig/{autorig_output,weights_backup},3_animation/{hy_motion_output,retargeted,corrective_shapes},4_export/{blender,unreal,unity,spritesheets},pipeline/{comfyui_workflows,rigging_scripts,hy_motion_prompts}}

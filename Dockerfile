@@ -4,8 +4,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC \
     WORKSPACE=/workspace
 
-# Build-time flag to control whether CUDA-enabled PyTorch is installed.
-# Set to 0 for CPU-only builds (useful for local testing without an NVIDIA GPU).
 ARG USE_CUDA=1
 
 # -----------------------------
@@ -24,19 +22,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 libxext6 libsm6 \
     libx11-6 libxi6 libxrandr2 libxxf86vm1 libxfixes3 libxcursor1 libxinerama1 \
     mesa-utils \
-    libopenexr-dev \
-    libjpeg-dev libpng-dev libtiff-dev \
-    libavcodec-dev libavformat-dev libavutil-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Ensure git-lfs is initialized so LFS-tracked models can be pulled at runtime/build
 RUN git lfs install --system || true
 
 RUN mkdir -p ${WORKSPACE}
 WORKDIR ${WORKSPACE}
 
 # -----------------------------
-# 2. Global Python venv (moved out of ${WORKSPACE} to avoid mount masking)
+# 2. Global Python venv
 # -----------------------------
 RUN python3 -m venv /opt/venv && \
     /opt/venv/bin/pip install --upgrade pip wheel setuptools
@@ -44,19 +38,10 @@ RUN python3 -m venv /opt/venv && \
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
-# Create non-root user early. We will ensure permissions around venv
-# are correct when pip installs complete to avoid permission conflicts.
 RUN groupadd -r app || true && useradd -r -m -g app app || true
-
-# Ensure the empty workspace directory is owned by `app` so `git clone` can write into it.
-# This is a small, non-recursive chown performed while the directory is still empty.
 RUN chown app:app ${WORKSPACE} || true
 
-# Allow Runpod (or other platforms) to override the service port
 ENV PORT=8188
-ENV MODEL_DOWNLOAD_ON_START=0
-# Comma-separated list of URLs to download into /workspace/models/3d when MODEL_DOWNLOAD_ON_START=1
-ENV MODEL_URLS=""
 
 # -----------------------------
 # 3. PyTorch (CUDA 12.1)
@@ -73,23 +58,9 @@ RUN if [ "${USE_CUDA}" = "1" ]; then \
 RUN pip install --no-cache-dir \
     numpy scipy pillow opencv-python \
     matplotlib scikit-image scikit-learn \
-    trimesh pygltflib \
     huggingface_hub \
-    flask supervisor && \
-    pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
-
-
-# -----------------------------
-# 5. Blender (CLI + headless)
-# Install Blender early as it writes to /opt (requires root).
-# -----------------------------
-ARG BLENDER_VERSION=4.0.2
-RUN mkdir -p /opt && \
-    cd /opt && \
-    wget -q https://download.blender.org/release/Blender${BLENDER_VERSION%.*}/blender-${BLENDER_VERSION}-linux-x64.tar.xz && \
-    tar -xf blender-${BLENDER_VERSION}-linux-x64.tar.xz && \
-    rm blender-${BLENDER_VERSION}-linux-x64.tar.xz && \
-    ln -s /opt/blender-${BLENDER_VERSION}-linux-x64/blender /usr/local/bin/blender
+    flask supervisor \
+    && pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
 # -----------------------------
 # 4. ComfyUI (installed OUTSIDE /workspace)
@@ -105,12 +76,10 @@ RUN mkdir -p /opt/comfyui/custom_nodes && \
     git clone https://github.com/cubiq/ComfyUI_essentials.git && \
     git clone https://github.com/WASasquatch/was-node-suite-comfyui.git
 
-
 USER root
 RUN ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r /opt/comfyui/requirements.txt && \
     chown -R app:app /opt/comfyui
 USER app
-
 
 RUN mkdir -p ${WORKSPACE}/models/checkpoints \
              ${WORKSPACE}/models/loras \
@@ -119,24 +88,10 @@ RUN mkdir -p ${WORKSPACE}/models/checkpoints \
              ${WORKSPACE}/models/unet
 
 # -----------------------------
-# 6. UniRig
-# -----------------------------
-RUN git clone https://github.com/VAST-AI-Research/UniRig.git ${WORKSPACE}/unirig
-
-RUN sed -i '/bpy/d' ${WORKSPACE}/unirig/requirements.txt
-RUN sed -i '/flash_attn/d' ${WORKSPACE}/unirig/requirements.txt
-
-# Install UniRig requirements as root so the venv (created as root) is writable
-USER root
-RUN ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r ${WORKSPACE}/unirig/requirements.txt
-USER app
-
-# -----------------------------
-# 7. Hy-Motion
+# 5. HY-Motion (local clone)
 # -----------------------------
 RUN git clone https://github.com/Tencent-Hunyuan/HY-Motion-1.0.git ${WORKSPACE}/hy-motion
 
-# Install HY-Motion requirements as root to avoid venv permission issues
 USER root
 RUN if [ -f "${WORKSPACE}/hy-motion/requirements.txt" ]; then \
         ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r ${WORKSPACE}/hy-motion/requirements.txt; \
@@ -144,40 +99,19 @@ RUN if [ -f "${WORKSPACE}/hy-motion/requirements.txt" ]; then \
 USER app
 
 # -----------------------------
-# 8. TripoSR
-# -----------------------------
-RUN git clone https://github.com/VAST-AI-Research/TripoSR.git ${WORKSPACE}/triposr
-
-RUN sed -i '/torchmcubes/d' ${WORKSPACE}/triposr/requirements.txt
-
-# Install TripoSR requirements as root to avoid venv permission issues
-USER root
-RUN if [ -f "${WORKSPACE}/triposr/requirements.txt" ]; then \
-        ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r ${WORKSPACE}/triposr/requirements.txt; \
-    fi
-USER app
-
-RUN mkdir -p ${WORKSPACE}/triposr/models \
-             ${WORKSPACE}/triposr/outputs \
-             ${WORKSPACE}/triposr/scripts
-
-# -----------------------------
-# 9. Workspace scaffold
+# 6. SpriteForge workspace structure
 # -----------------------------
 RUN mkdir -p \
-    ${WORKSPACE}/models/3d \
-    ${WORKSPACE}/models/textures \
-    ${WORKSPACE}/models/rigged \
-    ${WORKSPACE}/renders \
     ${WORKSPACE}/animations \
-    ${WORKSPACE}/scripts
+    ${WORKSPACE}/sprites \
+    ${WORKSPACE}/custom_nodes \
+    ${WORKSPACE}/pipeline
 
 # -----------------------------
-# 10. Startup script (always runs baked-in ComfyUI)
+# 7. Startup script + supervisor
 # -----------------------------
 USER root
 
-# Copy file browser and supervisor config
 COPY file_browser.py /usr/local/bin/file_browser.py
 COPY supervisord.conf /etc/supervisord.conf
 RUN chmod +x /usr/local/bin/file_browser.py
@@ -195,31 +129,14 @@ RUN mkdir -p /usr/local/bin && \
     echo 'exec supervisord -c /etc/supervisord.conf'            >> /usr/local/bin/start.sh && \
     chmod +x /usr/local/bin/start.sh
 
+EXPOSE 8188 8080 5000 3000
 
-EXPOSE 8188 8080
-
-# Simple healthcheck that verifies the web server responds on the configured port
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -fsS http://127.0.0.1:${PORT:-8188}/ || exit 1
 
-# Ensure the virtualenv is owned by `app` so runtime operations and
-# package installs from within the container by the non-root user work.
-# Keep this focused to the venv and app workdirs to avoid duplicating
-# large unrelated filesystem layers.
 USER root
-# Re-install/upgrade transformers from source after all requirements installs
-# (some requirements.txt files may pin an older transformers; force the
-# latest from the GitHub repo so Qwen2Tokenizer is available).
 RUN ${VIRTUAL_ENV}/bin/pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git || true
 RUN chown -R app:app ${VIRTUAL_ENV} || true
 USER app
 
-# -----------------------------
-# 11. Runpod-compatible CMD
-# -----------------------------
-# Use start script outside of /workspace so mounts don't hide it
 CMD ["/bin/bash", "/usr/local/bin/start.sh"]
-
-# Ensure container runs as non-root user
-USER app
-

@@ -1,0 +1,25 @@
+{
+    "default": "neutral",
+    "templates": {
+        "neutral": {
+            "label": "Neutral",
+            "prompt": "A clean, neutral rendering of the character.",
+            "negative_prompt": "blurry, distorted, low quality"
+        },
+        "dramatic": {
+            "label": "Dramatic Lighting",
+            "prompt": "High contrast dramatic lighting, rim light, cinematic shadows.",
+            "negative_prompt": "flat lighting, washed out"
+        },
+        "anime": {
+            "label": "Anime Style",
+            "prompt": "Anime style, bold outlines, expressive eyes, vibrant colors.",
+            "negative_prompt": "realistic, gritty, photorealistic"
+        },
+        "pixel": {
+            "label": "Pixel Art",
+            "prompt": "Pixel art style, 16-bit, crisp edges, limited palette.",
+            "negative_prompt": "smooth shading, high detail"
+        }
+    }
+}

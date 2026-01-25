@@ -1,0 +1,10 @@
+{
+  "workflows": [
+    {
+      "id": "default",
+      "name": "SpriteForge Default Workflow",
+      "file": "sprite_workflow.json",
+      "description": "Main workflow for sprite generation"
+    }
+  ]
+}

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SpriteForge GUI</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>SpriteForge</h1>
+    <p>AI‑Driven 2D Animation & Sprite Generation</p>
+
+    <div class="theme-row">
+        <label for="themeSelect" class="theme-label">Theme:</label>
+        <select id="themeSelect" onchange="applyTheme(this.value)">
+            <option value="system">System Default</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="solarized-light">Solarized Light</option>
+            <option value="solarized-dark">Solarized Dark</option>
+            <option value="custom">Custom</option>
+        </select>
+    </div>
+</header>
+
+<main>
+
+    <!-- Project Manager -->
+    <section class="panel">
+        <h2>Project Manager</h2>
+
+        <div class="row">
+            <label>Project ID:</label>
+            <input id="projectId" type="text" placeholder="Enter project ID">
+        </div>
+
+        <div class="row">
+            <label>Project Name:</label>
+            <input id="projectName" type="text" placeholder="Project Name">
+        </div>
+
+        <button onclick="loadProject()">Load Project</button>
+
+        <h3>Saved Projects</h3>
+        <div class="row">
+            <label for="projectList">Select Project:</label>
+            <select id="projectList"></select>
+            <button onclick="loadSelectedProject()">Load Selected</button>
+        </div>
+
+        <pre id="projectOutput"></pre>
+    </section>
+
+    <!-- Model Manager -->
+    <section class="panel">
+        <h2>Model Manager</h2>
+        <button onclick="loadModels()">Refresh Model List</button>
+        <pre id="modelOutput"></pre>
+    </section>
+
+    <!-- Style Presets -->
+    <section class="panel">
+        <h2>Style Presets</h2>
+
+        <div class="row">
+            <label for="stylePreset">Select Style:</label>
+            <select id="stylePreset"></select>
+        </div>
+
+        <button onclick="loadStyles()">Refresh Styles</button>
+    </section>
+
+    <!-- Motion Generation -->
+    <section class="panel">
+        <h2>1. Generate Motion</h2>
+
+        <div class="row">
+            <label for="motionPreset">Preset:</label>
+            <select id="motionPreset"></select>
+        </div>
+
+        <div class="row">
+            <label for="motionSeed">Seed:</label>
+            <input id="motionSeed" type="number" placeholder="Random">
+        </div>
+
+        <button onclick="generateMotion()">Generate Motion</button>
+        <pre id="motionOutput"></pre>
+    </section>
+
+    <!-- Animation Preview -->
+    <section class="panel">
+        <h2>2. Animation Preview</h2>
+
+        <div class="row">
+            <label for="previewVideoPath">Video Path:</label>
+            <input id="previewVideoPath" type="text" placeholder="/workspace/.../output.mp4">
+        </div>
+
+        <button onclick="previewVideo()">Preview Video</button>
+        <video id="videoPlayer" width="480" controls class="video-player"></video>
+
+        <hr>
+
+        <div class="row">
+            <label>Frames Directory:</label>
+            <input id="previewFramesDir" type="text" placeholder="/workspace/.../frames">
+        </div>
+
+        <button onclick="previewFrames()">Preview Frames</button>
+        <div id="frameContainer" class="frame-grid"></div>
+    </section>
+
+    <!-- Sprite Generation -->
+    <section class="panel">
+        <h2>3. Generate Sprites</h2>
+
+        <div class="row">
+            <label>Character Name:</label>
+            <input id="characterName" type="text" placeholder="Knight">
+        </div>
+
+        <div class="row">
+            <label>Frames Directory:</label>
+            <input id="framesDir" type="text" placeholder="/workspace/.../frames">
+        </div>
+
+        <button onclick="generateSprites()">Generate Sprites</button>
+        <pre id="spriteOutput"></pre>
+    </section>
+
+    <!-- Sprite Sheet Assembly -->
+    <section class="panel">
+        <h2>4. Assemble Sprite Sheet</h2>
+
+        <div class="row">
+            <label for="sheetFramesDir">Frames Directory:</label>
+            <input id="sheetFramesDir" type="text">
+        </div>
+
+        <div class="row">
+            <label for="sheetCharacter">Character Name:</label>
+            <input id="sheetCharacter" type="text">
+        </div>
+
+        <button onclick="assembleSheet()">Assemble Sheet</button>
+        <pre id="sheetOutput"></pre>
+    </section>
+
+    <!-- Sprite Sheet Viewer -->
+    <section class="panel">
+        <h2>5. Sprite Sheet Viewer</h2>
+
+        <div class="row">
+            <label for="sheetPreviewPath">Sprite Sheet Path:</label>
+            <input id="sheetPreviewPath" type="text" placeholder="/workspace/.../sheet.png">
+        </div>
+
+        <button onclick="previewSheet()">Preview Sprite Sheet</button>
+
+        <img id="sheetImage" class="sheet-image" alt="Sprite Sheet Preview">
+    </section>
+
+    <!-- Workflow Editor -->
+    <section class="panel">
+        <h2>8. Workflow Editor</h2>
+
+        <div class="row">
+            <label for="workflowSelect">Select Workflow:</label>
+            <select id="workflowSelect"></select>
+        </div>
+
+        <button onclick="loadWorkflow()">Load</button>
+        <label for="workflowEditor">Workflow JSON:</label>
+        <textarea id="workflowEditor" class="code-editor"></textarea>
+
+        <button onclick="saveWorkflow()">Save Workflow</button>
+        <button onclick="validateWorkflow()">Validate Workflow</button>
+
+        <pre id="workflowOutput"></pre>
+    </section>
+
+    <!-- Model Selector -->
+    <section class="panel">
+        <h2>9. Model Selector</h2>
+
+        <div class="row"><label for="selectCheckpoint">Checkpoint:</label><select id="selectCheckpoint"></select></div>
+        <div class="row"><label for="selectLora">LoRA:</label><select id="selectLora"></select></div>
+        <div class="row"><label for="selectVae">VAE:</label><select id="selectVae"></select></div>
+        <div class="row"><label for="selectControlnet">ControlNet:</label><select id="selectControlnet"></select></div>
+        <div class="row"><label for="selectIpAdapter">IP‑Adapter:</label><select id="selectIpAdapter"></select></div>
+
+        <button onclick="saveModelSelection()">Save Selection</button>
+        <pre id="modelSelectOutput"></pre>
+    </section>
+
+    <!-- Batch Generator -->
+    <section class="panel">
+        <h2>10. Batch Generator</h2>
+
+        <div class="row">
+            <label>Motions:</label>
+            <input id="batchMotions" type="text" placeholder="walk,run,jump">
+        </div>
+
+        <div class="row">
+            <label>Characters:</label>
+            <input id="batchCharacters" type="text" placeholder="Knight,Mage">
+        </div>
+
+        <div class="row">
+            <label>Styles:</label>
+            <input id="batchStyles" type="text" placeholder="sdxl_turbo,anime">
+        </div>
+
+        <button onclick="createBatch()">Create Batch</button>
+
+        <div class="row">
+            <label for="batchId">Batch ID:</label>
+            <input id="batchId" type="text">
+        </div>
+
+        <button onclick="runBatch()">Run Batch</button>
+        <button onclick="checkBatch()">Check Status</button>
+
+        <pre id="batchOutput"></pre>
+    </section>
+
+    <!-- Prompt Templates -->
+    <section class="panel">
+        <h2>12. Prompt Templates</h2>
+
+        <div class="row">
+            <label for="promptTemplate">Select Template:</label>
+            <select id="promptTemplate"></select>
+        </div>
+
+        <button onclick="loadPromptTemplates()">Refresh Templates</button>
+        <button onclick="loadPromptTemplate()">Load Template</button>
+        <label for="promptEditor">Template JSON:</label>
+        <textarea id="promptEditor" class="code-editor"></textarea>
+
+        <button onclick="savePromptTemplate()">Save Template</button>
+
+        <pre id="promptOutput"></pre>
+    </section>
+
+    <!-- Workflow Node Inspector -->
+    <section class="panel">
+        <h2>13. Workflow Node Inspector</h2>
+
+        <div class="row">
+            <label for="nodeWorkflowSelect">Select Workflow:</label>
+            <select id="nodeWorkflowSelect"></select>
+        </div>
+
+        <button onclick="loadNodeList()">Load Nodes</button>
+
+        <div class="row">
+            <label for="nodeSelect">Select Node:</label>
+            <select id="nodeSelect"></select>
+        </div>
+
+        <button onclick="loadNodeDetails()">Inspect Node</button>
+
+        <pre id="nodeOutput"></pre>
+    </section>
+
+</main>
+
+<script src="/static/js/app.js"></script>
+
+<script>
+const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("theme", theme);
+}
+
+function initTheme() {
+    const saved = localStorage.getItem("theme");
+
+    if (saved && saved !== "system") {
+        applyTheme(saved);
+        return;
+    }
+
+    applyTheme(prefersDark.matches ? "dark" : "light");
+}
+
+prefersDark.addEventListener("change", () => {
+    if (localStorage.getItem("theme") === "system") {
+        applyTheme(prefersDark.matches ? "dark" : "light");
+    }
+});
+
+initTheme();
+document.getElementById("themeSelect").value =
+    localStorage.getItem("theme") || "system";
+</script>
+
+</body>
+</html>
