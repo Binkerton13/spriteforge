@@ -1,5 +1,7 @@
+
 #!/usr/bin/env bash
 set -e
+set -x
 
 echo "==============================================="
 echo " SpriteForge – Startup"
@@ -60,6 +62,11 @@ echo " - File Browser on port 8080"
 echo " - SpriteForge GUI on port 5000"
 echo "==============================================="
 echo ""
+
+
+# Debug: show directory and permissions before starting supervisord
+echo "Listing /workspace/pipeline/logs before starting supervisord:"
+ls -l /workspace/pipeline/logs || echo "/workspace/pipeline/logs does not exist!"
 
 # Launch supervisor (runs all services)
 exec supervisord -c /etc/supervisord.conf
