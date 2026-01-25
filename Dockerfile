@@ -105,7 +105,8 @@ RUN mkdir -p \
     ${WORKSPACE}/animations \
     ${WORKSPACE}/sprites \
     ${WORKSPACE}/custom_nodes \
-    ${WORKSPACE}/pipeline
+    ${WORKSPACE}/pipeline \
+    ${WORKSPACE}/pipeline/logs
 
 # -----------------------------
 # 7. Startup script + supervisor
