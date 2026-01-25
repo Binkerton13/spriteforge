@@ -124,20 +124,12 @@ COPY supervisord.conf /etc/supervisord.conf
 
 RUN chmod +x /usr/local/bin/file_browser.py
 
+
 # --------------------------------------------
-# Startup script
+# Startup script (copy as last step for optimal caching)
 # --------------------------------------------
-RUN echo '#!/usr/bin/env bash'                                   >  /usr/local/bin/start.sh && \
-    echo 'set -e'                                               >> /usr/local/bin/start.sh && \
-    echo 'source "${VIRTUAL_ENV}/bin/activate"'                >> /usr/local/bin/start.sh && \
-    echo 'python - <<EOF'                                       >> /usr/local/bin/start.sh && \
-    echo 'import torch'                                         >> /usr/local/bin/start.sh && \
-    echo 'print("CUDA available:", torch.cuda.is_available())'  >> /usr/local/bin/start.sh && \
-    echo 'print("Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")' >> /usr/local/bin/start.sh && \
-    echo 'EOF'                                                  >> /usr/local/bin/start.sh && \
-    echo 'echo "Starting ComfyUI on port ${PORT:-8188} and File Browser on port 8080"' >> /usr/local/bin/start.sh && \
-    echo 'exec supervisord -c /etc/supervisord.conf'            >> /usr/local/bin/start.sh && \
-    chmod +x /usr/local/bin/start.sh
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 EXPOSE 8188 8080 5000 3000
 

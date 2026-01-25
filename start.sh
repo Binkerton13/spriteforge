@@ -65,8 +65,22 @@ echo ""
 
 
 
-# Extra safety: ensure log directory exists before launching supervisord
-mkdir -p /workspace/pipeline/logs
+
+# Extra safety: ensure all required runtime directories exist before launching supervisord
+mkdir -p \
+    /workspace/models/checkpoints \
+    /workspace/models/loras \
+    /workspace/models/vae \
+    /workspace/models/controlnet \
+    /workspace/models/upscale_models \
+    /workspace/models/clip \
+    /workspace/models/clip_vision \
+    /workspace/models/ipadapter \
+    /workspace/models/embeddings \
+    /workspace/animations \
+    /workspace/sprites \
+    /workspace/custom_nodes \
+    /workspace/pipeline/logs
 
 # Debug: show directory and permissions before starting supervisord
 echo "Listing /workspace/pipeline/logs before starting supervisord:"
