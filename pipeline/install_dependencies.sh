@@ -57,26 +57,15 @@ run_step() {
 }
 
 ###############################################################################
-# 1. Install HY-Motion (idempotent)
+# 1. Install HY-Motion (disabled — handled in Dockerfile)
 ###############################################################################
 
 install_hymotion() {
-    local repo="/workspace/hy-motion"
-
-    if [ -d "$repo" ]; then
-        echo "Updating HY-Motion..." | tee -a "$LOG_FILE"
-        git -C "$repo" pull
-    else
-        echo "Cloning HY-Motion..." | tee -a "$LOG_FILE"
-        git clone https://github.com/Tencent-Hunyuan/HY-Motion-1.0.git "$repo"
-    fi
-
-    if [ -f "$repo/requirements.txt" ]; then
-        pip install --user --ignore-installed --upgrade -r "$repo/requirements.txt"
-    fi
+    echo "HY-Motion installation skipped (handled in Docker build)." | tee -a "$LOG_FILE"
 }
 
 run_step "Installing HY-Motion" install_hymotion
+
 
 ###############################################################################
 # 2. Install Custom ComfyUI Nodes

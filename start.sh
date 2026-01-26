@@ -18,6 +18,27 @@ CUSTOM_NODES="/workspace/custom_nodes"
 COMFY_MODELS="/workspace/models"
 HY_MOTION="/workspace/hy-motion"
 
+PIPELINE_VERSION_SRC=$(cat "$PIPELINE_SRC/VERSION")
+PIPELINE_VERSION_DST=$(cat "$PIPELINE_DST/.version" 2>/dev/null || echo "0.0.0")
+
+if [ "$PIPELINE_VERSION_SRC" != "$PIPELINE_VERSION_DST" ]; then
+    echo "Pipeline update detected ($PIPELINE_VERSION_DST → $PIPELINE_VERSION_SRC)"
+    echo "Applying non-destructive migration..."
+
+    for item in $(ls "$PIPELINE_SRC"); do
+        if [ ! -e "$PIPELINE_DST/$item" ]; then
+            echo "Adding new file: $item"
+            cp -r "$PIPELINE_SRC/$item" "$PIPELINE_DST/"
+        else
+            echo "Keeping existing file: $item"
+        fi
+    done
+
+    echo "$PIPELINE_VERSION_SRC" > "$PIPELINE_DST/.version"
+else
+    echo "Pipeline is up to date (version $PIPELINE_VERSION_DST)"
+fi
+
 # Ensure workspace directories exist
 echo "Ensuring workspace directories exist..."
 mkdir -p "$PIPELINE_DST" \
@@ -28,15 +49,28 @@ mkdir -p "$PIPELINE_DST" \
          /workspace/pipeline/logs \
 
 # Copy pipeline to workspace on first run
+echo "Checking workspace pipeline..."
+
 if [ ! -f "$PIPELINE_DST/.initialized" ]; then
-    echo "Copying SpriteForge pipeline into workspace..."
-    cp -r "$PIPELINE_SRC/"* "$PIPELINE_DST/"
+    echo "Initializing workspace pipeline (first run)..."
+
+    # Copy only if the file does not already exist
+    for item in $(ls "$PIPELINE_SRC"); do
+        if [ ! -e "$PIPELINE_DST/$item" ]; then
+            cp -r "$PIPELINE_SRC/$item" "$PIPELINE_DST/"
+        else
+            echo "Skipping existing item: $item"
+        fi
+    done
+
+    # Mark initialization complete
     touch "$PIPELINE_DST/.initialized"
+else
+    echo "Workspace pipeline already initialized."
 fi
 
 # Run dependency installer (idempotent)
-echo "Running dependency installer..."
-bash "$PIPELINE_DST/install_dependencies.sh"
+echo "HY-Motion already installed in image — skipping runtime installation."
 
 # Symlink ComfyUI models + custom nodes
 echo "Linking ComfyUI models and custom nodes..."

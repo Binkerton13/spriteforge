@@ -59,12 +59,13 @@ RUN mkdir -p /opt/comfyui/custom_nodes && \
 RUN pip install --no-cache-dir -r /opt/comfyui/requirements.txt
 
 # --------------------------------------------
-# HY-Motion
+# HY-Motion (installed fully in builder stage)
 # --------------------------------------------
-RUN git clone https://github.com/Tencent-Hunyuan/HY-Motion-1.0.git ${WORKSPACE}/hy-motion
+RUN git clone https://github.com/Tencent-Hunyuan/HY-Motion-1.0.git /opt/hy-motion
 
-RUN if [ -f "${WORKSPACE}/hy-motion/requirements.txt" ]; then \
-        pip install --no-cache-dir -r ${WORKSPACE}/hy-motion/requirements.txt; \
+# Install HY-Motion dependencies inside the venv
+RUN if [ -f "/opt/hy-motion/requirements.txt" ]; then \
+        pip install --no-cache-dir -r /opt/hy-motion/requirements.txt; \
     fi
 
 # ============================================
@@ -96,7 +97,7 @@ COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/comfyui /opt/comfyui
 
 # Copy HY-Motion from builder
-COPY --from=builder /workspace/hy-motion ${WORKSPACE}/hy-motion
+COPY --from=builder /opt/hy-motion ${WORKSPACE}/hy-motion
 
 # --------------------------------------------
 # SpriteForge runtime folders
