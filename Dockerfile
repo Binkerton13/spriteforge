@@ -42,7 +42,7 @@ RUN pip install --no-cache-dir \
     numpy scipy pillow opencv-python \
     matplotlib scikit-image scikit-learn \
     trimesh pygltflib huggingface_hub \
-    flask supervisor \
+    flask flask-cors supervisor \
     && pip install --no-cache-dir --upgrade git+https://github.com/huggingface/transformers.git
 
 # --------------------------------------------
