@@ -121,7 +121,7 @@ RUN mkdir -p \
 # --------------------------------------------
 COPY file_browser.py /usr/local/bin/file_browser.py
 COPY supervisord.conf /etc/supervisord.conf
-
+COPY pipeline /opt/pipeline
 RUN chmod +x /usr/local/bin/file_browser.py
 
 

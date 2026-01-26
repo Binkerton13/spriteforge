@@ -88,4 +88,4 @@ ls -l /workspace/pipeline/logs || echo "/workspace/pipeline/logs does not exist!
 
 # Launch supervisor (runs all services)
 exec supervisord -c /etc/supervisord.conf
-# Just a push forcing comment #2
+# Just a push forcing comment #3
