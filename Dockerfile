@@ -84,7 +84,21 @@ RUN mkdir -p /opt/comfyui/custom_nodes && \
     git clone https://github.com/cubiq/ComfyUI_essentials.git && \
     git clone https://github.com/WASasquatch/was-node-suite-comfyui.git
 
-RUN pip install --no-cache-dir -r /opt/comfyui/requirements.txt
+# Install ComfyUI dependencies from requirements.txt (may be incomplete)
+RUN pip install --no-cache-dir -r /opt/comfyui/requirements.txt || true
+
+# Install missing dependencies ComfyUI actually uses
+RUN pip install --no-cache-dir \
+    sqlalchemy \
+    alembic \
+    deepdiff \
+    toml \
+    piexif \
+    blend_modes \
+    python-dotenv \
+    fastapi \
+    uvicorn
+
 
 # --- HY-Motion ---
 RUN git clone https://github.com/Tencent-Hunyuan/HY-Motion-1.0.git /opt/hy-motion
