@@ -27,7 +27,9 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { VueFlow, Controls, MiniMap } from '@vue-flow/core'
+import { VueFlow } from '@vue-flow/core'
+import { Controls } from '@vue-flow/controls'
+import { MiniMap } from '@vue-flow/minimap'
 import { useWorkflowsStore } from '../stores/workflows'
 import WorkflowNode from '../components/nodes/WorkflowNode.vue'
 import NodeCreateMenu from '../components/nodes/NodeCreateMenu.vue'
