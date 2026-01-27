@@ -85,10 +85,10 @@ RUN mkdir -p /opt/comfyui/custom_nodes && \
     git clone https://github.com/WASasquatch/was-node-suite-comfyui.git
 
 # Install ComfyUI dependencies from requirements.txt (may be incomplete)
-RUN pip install --no-cache-dir -r /opt/comfyui/requirements.txt || true
+# After creating /opt/venv
+RUN /opt/venv/bin/pip install --no-cache-dir -r /opt/comfyui/requirements.txt || true
 
-# Install missing dependencies ComfyUI actually uses
-RUN pip install --no-cache-dir \
+RUN /opt/venv/bin/pip install --no-cache-dir \
     sqlalchemy \
     alembic \
     deepdiff \
@@ -97,8 +97,8 @@ RUN pip install --no-cache-dir \
     blend_modes \
     python-dotenv \
     fastapi \
-    uvicorn
-
+    uvicorn \
+    aiohttp
 
 # --- HY-Motion ---
 RUN git clone https://github.com/Tencent-Hunyuan/HY-Motion-1.0.git /opt/hy-motion
