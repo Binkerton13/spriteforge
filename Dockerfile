@@ -62,6 +62,7 @@ COPY pipeline/gui/frontend/package.json pipeline/gui/frontend/package-lock.json 
 
 # Install dependencies cleanly
 RUN npm install
+RUN ls -R /app
 
 # Copy the rest of the frontend source (node_modules should be ignored via .dockerignore)
 COPY pipeline/gui/frontend ./
