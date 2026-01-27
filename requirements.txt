@@ -1,0 +1,36 @@
+# --- Web stack ---
+flask
+flask-cors
+werkzeug
+supervisor
+
+# --- Core scientific + imaging ---
+numpy
+scipy
+pillow
+opencv-python
+matplotlib
+scikit-image
+scikit-learn
+
+# --- Geometry / 3D ---
+trimesh
+pygltflib
+
+# --- ML + HuggingFace ---
+huggingface_hub
+transformers @ git+https://github.com/huggingface/transformers.git
+
+# --- HY-Motion common deps ---
+einops
+omegaconf
+
+# --- ComfyUI ecosystem helpers ---
+tqdm
+psutil
+
+# --- Torch (CUDA 12.1) ---
+# Installed via Dockerfile index-url, but included here for completeness
+torch
+torchvision
+torchaudio

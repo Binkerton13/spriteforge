@@ -15,6 +15,7 @@ from services.batch import create_batch, run_batch_async, load_batch
 from services.prompts import load_templates, get_template, save_template
 from services.node_inspector import list_nodes, get_node_details
 from services.project import save_project, load_project, list_projects, prepare_project_for_gui
+from routes.health import health_bp
 
 
 # ------------------------------------------------------------------------------
@@ -26,7 +27,7 @@ def create_app():
         static_folder="static",
         template_folder="templates"
     )
-
+    app.register_blueprint(health_bp)
     CORS(app)
 
     # Logging setup

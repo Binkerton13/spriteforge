@@ -1,0 +1,129 @@
+/* ============================
+   SpriteForge Global Theme
+   VSCode-inspired dark palette
+   ============================ */
+
+:root {
+  --bg-0: #1e1e1e;
+  --bg-1: #252526;
+  --bg-2: #2d2d30;
+  --bg-3: #3c3c3c;
+
+  --fg-0: #d4d4d4;
+  --fg-1: #cccccc;
+  --fg-muted: #888;
+
+  --accent: #0e639c;
+  --accent-hover: #1177bb;
+
+  --border: #3f3f46;
+
+  --radius: 6px;
+  --transition: 0.15s ease;
+}
+:root.light {
+  --bg-0: #f5f5f5;
+  --bg-1: #eaeaea;
+  --bg-2: #dcdcdc;
+  --bg-3: #c8c8c8;
+
+  --fg-0: #222;
+  --fg-1: #444;
+  --fg-muted: #777;
+
+  --accent: #0066cc;
+  --accent-hover: #3388ff;
+
+  --border: #bbb;
+}
+
+/* Global reset */
+body {
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+/* Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-3) var(--bg-1);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-1);
+}
+
+/* Panels */
+.panel {
+  background: var(--bg-2);
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+/* Buttons */
+button {
+  background: var(--accent);
+  color: white;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+button:hover {
+  background: var(--accent-hover);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Inputs */
+input, select, textarea {
+  background: var(--bg-1);
+  color: var(--fg-0);
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: var(--radius);
+  width: 100%;
+  transition: border var(--transition);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* Headings */
+h1 {
+  font-size: 26px;
+  margin-bottom: 20px;
+  color: var(--fg-0);
+}
+
+h2 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: var(--fg-1);
+}
+
+h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: var(--accent);
+}
