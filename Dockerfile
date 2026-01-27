@@ -58,15 +58,15 @@ FROM node:20 AS frontend
 WORKDIR /app
 
 # Copy only package files first
-COPY package.json package-lock.json ./
+COPY pipeline/gui/frontend/package.json pipeline/gui/frontend/package-lock.json ./
 
 # Install dependencies cleanly
 RUN npm install
 
-# Now copy the rest of the source
-COPY . .
+# Copy the rest of the frontend source
+COPY pipeline/gui/frontend ./
 
-# Build
+# Build the frontend
 RUN npm run build
 
 

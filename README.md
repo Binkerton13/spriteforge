@@ -107,6 +107,101 @@ sitecustomize.py
 /sprites
 /logs
 
+spriteforge/
+├── .dockerignore
+├── .git/
+├── .github/
+├── .gitignore
+├── .hintrc
+├── animations/
+├── Dockerfile
+├── file_browser.py
+├── pipeline/
+│   ├── .version
+│   ├── env_patches/
+│   ├── gui/
+│   │   ├── app.py
+│   │   ├── frontend/
+│   │   │   ├── docs/
+│   │   │   ├── index.html
+│   │   │   ├── node_modules/
+│   │   │   ├── package-lock.json
+│   │   │   ├── package.json
+│   │   │   ├── src/
+│   │   │   │   ├── api/
+│   │   │   │   ├── App.vue
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── FileBrowser/
+│   │   │   │   │   │   ├── FileBrowserModal.vue
+│   │   │   │   │   │   ├── FileList.vue
+│   │   │   │   │   │   ├── FilePreview.vue
+│   │   │   │   │   │   └── FileUpload.vue
+│   │   │   │   │   ├── ModelActiveSelector.vue
+│   │   │   │   │   ├── ModelList.vue
+│   │   │   │   │   ├── ModelTypeTabs.vue
+│   │   │   │   │   ├── ModelUploadButton.vue
+│   │   │   │   │   ├── nodes/
+│   │   │   │   │   │   ├── NodeCreateMenu.vue
+│   │   │   │   │   │   └── WorkflowNode.vue
+│   │   │   │   │   ├── ProjectAssetList.vue
+│   │   │   │   │   ├── ProjectCreateModal.vue
+│   │   │   │   │   ├── ProjectList.vue
+│   │   │   │   │   ├── ProjectMetadataEditor.vue
+│   │   │   │   │   ├── SettingsModal.vue
+│   │   │   │   │   ├── Sidebar.vue
+│   │   │   │   │   ├── SpriteFrameGrid.vue
+│   │   │   │   │   ├── SpriteGenerationSettings.vue
+│   │   │   │   │   ├── SpriteModelSelector.vue
+│   │   │   │   │   ├── SpritePanel.vue
+│   │   │   │   │   ├── SpriteSheetAssembler.vue
+│   │   │   │   │   ├── SpriteStyleSelector.vue
+│   │   │   │   │   ├── TaskQueue.vue
+│   │   │   │   │   ├── ToastContainer.vue
+│   │   │   │   │   ├── WorkflowList.vue
+│   │   │   │   │   └── WorkFlowPanel.vue
+│   │   │   │   ├── health.js
+│   │   │   │   ├── Layout/
+│   │   │   │   │   ├── AppLayout.vue
+│   │   │   │   │   ├── Sidebar.vue
+│   │   │   │   │   └── TopBar.vue
+│   │   │   │   ├── main.js
+│   │   │   │   ├── pages/
+│   │   │   │   │   ├── ModelPage.vue
+│   │   │   │   │   ├── MotionPage.vue
+│   │   │   │   │   ├── ProjectPage.vue
+│   │   │   │   │   ├── SpritePage.vue
+│   │   │   │   │   └── WorkflowGraphPage.vue
+│   │   │   │   ├── router.js
+│   │   │   │   ├── shortcuts.js
+│   │   │   │   ├── stores/
+│   │   │   │   │   ├── files.js
+│   │   │   │   │   ├── health.js
+│   │   │   │   │   ├── models.js
+│   │   │   │   │   ├── motion.js
+│   │   │   │   │   ├── notify.js
+│   │   │   │   │   ├── projects.js
+│   │   │   │   │   ├── settings.js
+│   │   │   │   │   ├── sprites.js
+│   │   │   │   │   ├── tasks.js
+│   │   │   │   │   └── workflows.js
+│   │   │   │   └── theme.css
+│   │   │   └── vite.config.js
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── static/
+│   │   └── templates/
+│   ├── install_dependencies.sh
+│   ├── project.json
+│   ├── scripts/
+│   ├── VERSION
+│   └── workflows/
+├── README.md
+├── requirements.txt
+├── sprites/
+├── start.sh
+├── supervisord.conf
+├── validate.py
 ---
 
 
