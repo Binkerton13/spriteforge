@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { pingBackend } from '../api/health'
+import { checkHealth } from '../api/health'
 
 export const useHealthStore = defineStore('health', {
   state: () => ({
