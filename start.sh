@@ -100,3 +100,4 @@ echo ""
 # 7. Launch supervisor
 # ---------------------------------------------------------
 exec supervisord -c /etc/supervisord.conf
+# End of script
