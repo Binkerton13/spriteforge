@@ -58,7 +58,7 @@ FROM node:20 AS frontend
 WORKDIR /app
 
 # Copy only package files first
-COPY pipeline/gui/frontend/package.json pipeline/gui/frontend/package-lock.json ./
+COPY --from=frontend /app/dist /opt/pipeline/gui/static
 
 # Install dependencies cleanly
 RUN npm install
