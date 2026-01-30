@@ -77,7 +77,7 @@ It replaces traditional 3D rigging workflows with a clean, modern stack built ar
 
 
 ## Folder Structure
-
+```text
 /workspace
 /pipeline
 start.sh
@@ -107,7 +107,6 @@ sitecustomize.py
 /sprites
 /logs
 
-```text
 spriteforge/
 ├── .dockerignore
 ├── .git/
