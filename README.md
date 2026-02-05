@@ -69,42 +69,144 @@ HY‑Motion → Frames → ComfyUI → SpriteForge GUI → Sprites
 
 ---
 
-# 📁 Folder Structure
 
-	/workspace
-	/models
-	/custom_nodes
-	/animations
-	/sprites
-	/logs
+## Folder Structure
+```text
+/workspace
+/pipeline
+start.sh
+install_dependencies.sh
+supervisord.conf
+/gui
+app.py
+/routes
+/templates
+/static
+/services
+/models
+/scripts
+install_custom_nodes.sh
+/env_patches
+sitecustomize.py
 
-	/pipeline
-	/gui
-	app.py
-	/static
-	/templates
-	/services
-	/routes
-	/frontend (Vue source)
-	/workflows
-	/scripts
-	/env_patches
-	project.json
-	VERSION
+/custom_nodes
+/models
+/checkpoints
+/loras
+/vae
+/controlnet
+/unet
 
-	start.sh
-	supervisord.conf
-	Dockerfile
-	requirements.txt
+/animations
+/sprites
+/logs
+
+spriteforge/
+├── .dockerignore
+├── .git/
+├── .github/
+├── .gitignore
+├── .hintrc
+├── animations/
+├── Dockerfile
+├── file_browser.py
+├── pipeline/
+│   ├── .version
+│   ├── env_patches/
+│   ├── gui/
+│   │   ├── app.py
+│   │   ├── frontend/
+│   │   │   ├── docs/
+│   │   │   ├── index.html
+│   │   │   ├── node_modules/
+│   │   │   ├── package-lock.json
+│   │   │   ├── package.json
+│   │   │   ├── src/
+│   │   │   │   ├── api/
+│   │   │   │   ├── App.vue
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── FileBrowser/
+│   │   │   │   │   │   ├── FileBrowserModal.vue
+│   │   │   │   │   │   ├── FileList.vue
+│   │   │   │   │   │   ├── FilePreview.vue
+│   │   │   │   │   │   └── FileUpload.vue
+│   │   │   │   │   ├── ModelActiveSelector.vue
+│   │   │   │   │   ├── ModelList.vue
+│   │   │   │   │   ├── ModelTypeTabs.vue
+│   │   │   │   │   ├── ModelUploadButton.vue
+│   │   │   │   │   ├── nodes/
+│   │   │   │   │   │   ├── NodeCreateMenu.vue
+│   │   │   │   │   │   └── WorkflowNode.vue
+│   │   │   │   │   ├── ProjectAssetList.vue
+│   │   │   │   │   ├── ProjectCreateModal.vue
+│   │   │   │   │   ├── ProjectList.vue
+│   │   │   │   │   ├── ProjectMetadataEditor.vue
+│   │   │   │   │   ├── SettingsModal.vue
+│   │   │   │   │   ├── Sidebar.vue
+│   │   │   │   │   ├── SpriteFrameGrid.vue
+│   │   │   │   │   ├── SpriteGenerationSettings.vue
+│   │   │   │   │   ├── SpriteModelSelector.vue
+│   │   │   │   │   ├── SpritePanel.vue
+│   │   │   │   │   ├── SpriteSheetAssembler.vue
+│   │   │   │   │   ├── SpriteStyleSelector.vue
+│   │   │   │   │   ├── TaskQueue.vue
+│   │   │   │   │   ├── ToastContainer.vue
+│   │   │   │   │   ├── WorkflowList.vue
+│   │   │   │   │   └── WorkFlowPanel.vue
+│   │   │   │   ├── health.js
+│   │   │   │   ├── Layout/
+│   │   │   │   │   ├── AppLayout.vue
+│   │   │   │   │   ├── Sidebar.vue
+│   │   │   │   │   └── TopBar.vue
+│   │   │   │   ├── main.js
+│   │   │   │   ├── pages/
+│   │   │   │   │   ├── ModelPage.vue
+│   │   │   │   │   ├── MotionPage.vue
+│   │   │   │   │   ├── ProjectPage.vue
+│   │   │   │   │   ├── SpritePage.vue
+│   │   │   │   │   └── WorkflowGraphPage.vue
+│   │   │   │   ├── router.js
+│   │   │   │   ├── shortcuts.js
+│   │   │   │   ├── stores/
+│   │   │   │   │   ├── files.js
+│   │   │   │   │   ├── health.js
+│   │   │   │   │   ├── models.js
+│   │   │   │   │   ├── motion.js
+│   │   │   │   │   ├── notify.js
+│   │   │   │   │   ├── projects.js
+│   │   │   │   │   ├── settings.js
+│   │   │   │   │   ├── sprites.js
+│   │   │   │   │   ├── tasks.js
+│   │   │   │   │   └── workflows.js
+│   │   │   │   └── theme.css
+│   │   │   └── vite.config.js
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── static/
+│   │   └── templates/
+│   ├── install_dependencies.sh
+│   ├── project.json
+│   ├── scripts/
+│   ├── VERSION
+│   └── workflows/
+├── README.md
+├── requirements.txt
+├── sprites/
+├── start.sh
+├── supervisord.conf
+├── validate.py
+```
 
 ---
 
-# 🛠 Installation
 
-## 1. Clone the repository
-	```bash
-	git clone https://github.com/<yourname>/SpriteForge.git
-	cd SpriteForge
+## Installation
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/<yourname>/SpriteForge.git
+cd SpriteForge
 
 2. Build the container
 
@@ -198,11 +300,16 @@ Recommended Models
 📝 License
 	MIT License (or your preferred license)
 
-🙏 Credits
-	HY‑Motion by Tencent Hunyuan
 
-	ComfyUI by comfyanonymous
+## Contributing
+Pull requests are welcome.
+Please open an issue first to discuss major changes.
 
-	Custom nodes by their respective authors
 
-	SpriteForge architecture by Morgen
+## Credits
+- HY‑Motion by Tencent Hunyuan
+- ComfyUI by comfyanonymous
+- Custom nodes by their respective authors
+- SpriteForge architecture by Morgen
+
+---
