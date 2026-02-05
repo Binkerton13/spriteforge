@@ -5,13 +5,13 @@
     <div class="list">
       <div
         v-for="item in items"
-        :key="item.path"
+        :key="item.path || item.name || item"
         class="item"
-        :class="{ active: item === selected }"
+        :class="{ active: isActive(item) }"
         @click="$emit('select', item)"
         @dblclick="open(item)"
       >
-        <span>{{ item.name }}</span>
+        <span>{{ item.name || item.path || item }}</span>
 
         <button class="delete" @click.stop="$emit('delete', item)">✕</button>
       </div>
@@ -20,11 +20,23 @@
 </template>
 
 <script setup>
-defineProps(['items', 'selected'])
+const props = defineProps(['items', 'selected'])
 const emit = defineEmits(['select', 'open', 'delete'])
 
 function open(item) {
   if (item.is_dir) emit('open', item.path)
+}
+
+function isActive(item) {
+  if (item === props.selected) return true
+
+  if (item?.path && props.selected?.path)
+    return item.path === props.selected.path
+
+  if (item?.name && props.selected?.name)
+    return item.name === props.selected.name
+
+  return false
 }
 </script>
 

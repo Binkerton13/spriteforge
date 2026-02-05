@@ -26,8 +26,8 @@ import TaskQueue from '../components/TaskQueue.vue'
 .layout {
   display: flex;
   height: 100vh;
-  background: #1e1e1e;
-  color: #ddd;
+  background: var(--bg-0);
+  color: var(--fg-0);
 }
 
 .main {

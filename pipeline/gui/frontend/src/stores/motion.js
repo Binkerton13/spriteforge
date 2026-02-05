@@ -1,48 +1,48 @@
+// src/stores/motion.js
 import { defineStore } from 'pinia'
-import { fetchPresets, generateMotion, fetchFrames, previewVideoUrl } from '../api/motion'
-import { useNotifyStore } from './notify'
-import { useTaskStore } from './tasks'
+import {
+  suggestMotion,
+  refineMotion,
+  styleMotion,
+  translateMotion
+} from '../api/motion'
 
 export const useMotionStore = defineStore('motion', {
   state: () => ({
-    presets: [],
-    selectedPreset: '',
-    seed: 1234,
-    frames: [],
-    videoUrl: null,
-    loading: false
+    motions: [],
+    selectedMotion: null,
+    generating: false,
   }),
 
   actions: {
-    async loadPresets() {
-      this.presets = await fetchPresets()
+    async suggest(prompt, preset) {
+      this.generating = true
+      const data = await suggestMotion(prompt, preset)
+      this.generating = false
+      return data.motion
     },
 
-    async runGeneration() {
-      const tasks = useTaskStore()
-      const notify = useNotifyStore()
-      const taskId = tasks.add("Generating motion")
+    async refine(prompt, existing_motion) {
+      const data = await refineMotion(prompt, existing_motion)
+      return data.motion
+    },
 
-      try {
-        this.loading = true
-        await generateMotion({
-          preset: this.selectedPreset,
-          seed: this.seed
-        })
+    async applyStyle(style, existing_motion) {
+      const data = await styleMotion(style, existing_motion)
+      return data.motion
+    },
 
-        tasks.update(taskId, { progress: 70 })
+    async translate(existing_motion, target_language) {
+      const data = await translateMotion(existing_motion, target_language)
+      return data.motion
+    },
 
-        this.videoUrl = previewVideoUrl()
-        this.frames = await fetchFrames()
+    importMotion(fileObj) {
+      this.motions.push(fileObj)
+    },
 
-        tasks.complete(taskId)
-        notify.success("Motion generated successfully")
-      } catch (err) {
-        tasks.fail(taskId, "Motion generation failed")
-        notify.error("Motion generation failed")
-      } finally {
-        this.loading = false
-      }
+    select(motion) {
+      this.selectedMotion = motion
     }
   }
 })

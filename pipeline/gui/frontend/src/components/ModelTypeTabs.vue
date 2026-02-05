@@ -7,28 +7,20 @@
       :class="{ active: t === activeType }"
       @click="$emit('select', t)"
     >
-      {{ t }}
+      {{ labels[t] || t }}
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps(['types', 'activeType'])
-</script>
+const props = defineProps(['types', 'activeType'])
 
-<style scoped>
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+const labels = {
+  checkpoints: "Checkpoints",
+  loras: "LoRAs",
+  vae: "VAEs",
+  controlnet: "ControlNet",
+  ipadapter: "IP‑Adapter",
+  animatediff: "AnimateDiff"
 }
-.tab {
-  padding: 8px 16px;
-  background: #2d2d30;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.tab.active {
-  background: #0e639c;
-}
-</style>
+</script>

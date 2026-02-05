@@ -1,47 +1,119 @@
 <template>
-  <div class="page">
-    <h1>Model Manager</h1>
+    <div class="model-page">
 
-    <ModelUploadButton />
+      <div class="header">
+        <h2>Model Manager</h2>
 
-    <ModelTypeTabs
-      :types="store.types"
-      :activeType="store.activeType"
-      @select="t => { store.activeType = t; store.loadModels() }"
-    />
+        <ModelUploadButton @uploaded="reloadModels" />
+      </div>
 
-    <ModelList
-      :models="store.models"
-      :activeModel="store.activeModel"
-      @select="m => store.setActive(m)"
-    />
+      <ModelTypeTabs
+        :types="modelTypes"
+        :activeType="activeType"
+        @select="setActiveType"
+      />
 
-    <ModelActiveSelector :model="store.activeModel" />
-  </div>
+      <div class="content">
+
+        <!-- LEFT: Model List -->
+        <ModelList
+          :models="filteredModels"
+          :activeModel="activeModel"
+          @select="setActiveModel"
+          @delete="deleteModel"
+        />
+
+        <!-- RIGHT: Active Model Selector -->
+        <ModelActiveSelector
+          :activeModel="activeModel"
+          :models="filteredModels"
+          @set-active="setActiveModel"
+        />
+
+      </div>
+
+    </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useModelsStore } from '../stores/models'
+import { ref, computed, onMounted } from 'vue'
 
-import ModelTypeTabs from '../components/ModelTypeTabs.vue'
 import ModelList from '../components/ModelList.vue'
 import ModelActiveSelector from '../components/ModelActiveSelector.vue'
 import ModelUploadButton from '../components/ModelUploadButton.vue'
+import ModelTypeTabs from '../components/ModelTypeTabs.vue'
 
-const store = useModelsStore()
+import { useModelsStore } from '../stores/models'
+import { useProjectsStore } from '../stores/projects'
+import { useNotifyStore } from '../stores/notify'
 
-onMounted(() => {
-  store.loadTypes()
+/* STORES */
+const modelsStore = useModelsStore()
+const projects = useProjectsStore()
+const notify = useNotifyStore()
+
+/* LOCAL STATE */
+const activeType = ref('render')  // default category
+
+/* MODEL TYPES */
+const modelTypes = [
+  { id: 'render', label: 'Render Models' },
+  { id: 'motion', label: 'Motion Models' },
+  { id: 'style', label: 'Style Models' },
+  { id: 'ipadapter', label: 'IP Adapters' },
+  { id: 'lora', label: 'LoRA Models' },
+]
+
+/* COMPUTED */
+const filteredModels = computed(() => {
+  return modelsStore.models.filter(m => m.type === activeType.value)
+})
+
+const activeModel = computed(() => modelsStore.activeModel)
+
+/* ACTIONS */
+function setActiveType(type) {
+  activeType.value = type
+}
+
+async function reloadModels() {
+  await modelsStore.loadModels()
+}
+
+async function setActiveModel(model) {
+  await modelsStore.setActive(model)
+  notify.success(`Active model set to ${model}`)
+}
+
+async function deleteModel(name) {
+  await modelsStore.remove(name)
+  notify.success(`Deleted model: ${name}`)
+}
+
+/* INITIAL LOAD */
+onMounted(async () => {
+  projects.ensureLoaded()
+  await modelsStore.loadModels()
 })
 </script>
 
 <style scoped>
-.page {
-  padding: 24px;
-  min-height: 100vh;
-  background: var(--bg-0);
-  color: var(--fg-0);
+.model-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+}
 </style>

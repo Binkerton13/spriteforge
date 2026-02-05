@@ -24,7 +24,12 @@ const tasks = useTaskStore()
 
 <style scoped>
 .task-panel {
-  background: var(--bg-2);
+  background: linear-gradient(
+    135deg,
+    var(--bg-2),
+    rgba(61, 218, 215, 0.04),
+    rgba(138, 79, 255, 0.04)
+  );
   padding: 16px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -37,20 +42,25 @@ const tasks = useTaskStore()
   margin-bottom: 12px;
   border-radius: var(--radius);
   background: var(--bg-1);
+  border-left: 4px solid var(--accent-active);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .task.done {
-  border-left: 4px solid #4caf50;
+  border-left-color: var(--accent-green);
+  box-shadow: var(--glow-green);
 }
 
 .task.error {
-  border-left: 4px solid #d32f2f;
+  border-left-color: var(--accent-orange-deep);
+  box-shadow: var(--glow-orange-deep);
 }
 
 .row {
   display: flex;
   justify-content: space-between;
   margin-bottom: 6px;
+  color: var(--fg-0);
 }
 
 .progress-bar {
@@ -62,13 +72,16 @@ const tasks = useTaskStore()
 
 .progress {
   height: 100%;
-  background: var(--accent);
-  transition: width 0.2s ease;
+  background: var(--accent-active);
+  transition: width 0.2s ease, background var(--transition);
+  box-shadow: var(--glow);
 }
 
 .error {
   margin-top: 6px;
-  color: #d32f2f;
+  color: var(--accent-orange-deep);
   font-size: 13px;
+  text-shadow: var(--glow-orange-deep);
 }
+
 </style>

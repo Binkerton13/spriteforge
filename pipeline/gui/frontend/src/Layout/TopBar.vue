@@ -5,7 +5,7 @@
       <span class="value">{{ models.activeModel || "None" }}</span>
 
       <span class="label" style="margin-left:20px;">Project:</span>
-      <span class="value">{{ projects.metadata.name || "None" }}</span>
+      <span class="value">{{ "None" }}</span>
     </div>
 
     <div class="right">
@@ -75,39 +75,14 @@ onMounted(() => {
   border-radius: 50%;
   margin-right: 8px;
   display: inline-block;
+  background: var(--accent-green);
+  box-shadow: var(--glow-green);
+  transition: background var(--transition), box-shadow var(--transition);
 }
 
-.online {
-  background: #4caf50;
-  box-shadow: 0 0 6px #4caf50;
-}
-
-.offline {
-  background: #d32f2f;
-  box-shadow: 0 0 6px #d32f2f;
-}
-
-.spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--fg-muted);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-right: 12px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.flash {
-  animation: flash 0.3s ease;
-}
-
-@keyframes flash {
-  0% { background: var(--accent); }
-  100% { background: var(--bg-2); }
+:deep(body.offline) .status {
+  background: var(--accent-orange);
+  box-shadow: var(--glow-orange);
 }
 
 .settings-btn {
@@ -117,9 +92,12 @@ onMounted(() => {
   font-size: 18px;
   cursor: pointer;
   margin-left: 12px;
+  transition: color var(--transition), text-shadow var(--transition);
 }
+
 .settings-btn:hover {
-  color: var(--accent);
+  color: var(--accent-active);
+  text-shadow: var(--glow);
 }
 
 </style>

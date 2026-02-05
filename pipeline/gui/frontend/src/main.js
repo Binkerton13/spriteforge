@@ -15,10 +15,10 @@ import { registerShortcuts } from './shortcuts'
 import { useMotionStore } from './stores/motion'
 import { useSpritesStore } from './stores/sprites'
 import { useModelsStore } from './stores/models'
-import { useWorkflowsStore } from './stores/workflows'
 import { useProjectsStore } from './stores/projects'
 import { useFilesStore } from './stores/files'
 import { useSettingsStore } from './stores/settings'
+import { useSpritePresetsStore } from './stores/spritePresets'   // ⭐ NEW
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -35,9 +35,9 @@ settings.load()
 app.config.globalProperties.$motion = useMotionStore()
 app.config.globalProperties.$sprites = useSpritesStore()
 app.config.globalProperties.$models = useModelsStore()
-app.config.globalProperties.$workflows = useWorkflowsStore()
 app.config.globalProperties.$projects = useProjectsStore()
 app.config.globalProperties.$files = useFilesStore()
+app.config.globalProperties.$spritePresets = useSpritePresetsStore()   // ⭐ NEW
 
 // Register global keyboard shortcuts
 registerShortcuts(app)
@@ -48,6 +48,8 @@ app.mount('#app')
 watch(
   () => settings.theme,
   (theme) => {
-    document.documentElement.classList.toggle('light', theme === 'light')
-  }
+    const isLight = theme === 'light'
+    document.documentElement.classList.toggle('light', isLight)
+  },
+  { immediate: true }   // ⭐ Prevents flash on first load
 )

@@ -1,54 +1,41 @@
+// src/stores/models.js
 import { defineStore } from 'pinia'
 import {
-  fetchModelTypes,
-  fetchModelsByType,
-  fetchActiveModel,
+  listModels,
+  uploadModel,
+  deleteModel,
   setActiveModel
 } from '../api/models'
-import { useNotifyStore } from './notify'
 
 export const useModelsStore = defineStore('models', {
   state: () => ({
-    types: [],
     models: [],
-    activeType: '',
-    activeModel: '',
-    loading: false
+    activeModel: null,
+    loading: false,
   }),
 
   actions: {
-    async loadTypes() {
-      this.types = await fetchModelTypes()
-      if (this.types.length) {
-        this.activeType = this.types[0]
-        await this.loadModels()
-      }
+    async loadModels() {
+      this.loading = true
+      const data = await listModels()
+      this.models = data.models || []
+      this.activeModel = data.active || null
+      this.loading = false
     },
 
-    async loadModels() {
-      const notify = useNotifyStore()
+    async upload(formData) {
+      await uploadModel(formData)
+      await this.loadModels()
+    },
 
-      try {
-        this.loading = true
-        this.models = await fetchModelsByType(this.activeType)
-        this.activeModel = (await fetchActiveModel()).model
-      } catch (err) {
-        notify.error("Failed to load models")
-      } finally {
-        this.loading = false
-      }
+    async remove(name) {
+      await deleteModel(name)
+      await this.loadModels()
     },
 
     async setActive(model) {
-      const notify = useNotifyStore()
-
-      try {
-        this.activeModel = model
-        await setActiveModel(model)
-        notify.success(`Active model set to ${model}`)
-      } catch (err) {
-        notify.error("Failed to set active model")
-      }
+      await setActiveModel(model)
+      this.activeModel = model
     }
   }
 })

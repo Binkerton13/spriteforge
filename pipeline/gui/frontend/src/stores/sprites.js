@@ -1,77 +1,42 @@
+// src/stores/sprites.js
 import { defineStore } from 'pinia'
-import {
-  fetchStyles,
-  fetchModels,
-  generateSprites,
-  assembleSheet,
-  fetchFrames,
-  sheetPreviewUrl
-} from '../api/sprites'
-import { useNotifyStore } from './notify'
+import { runSpriteWorkflow } from '../api/sprites'
 
 export const useSpritesStore = defineStore('sprites', {
   state: () => ({
-    styles: [],
-    models: [],
-    selectedStyle: '',
-    selectedModel: '',
-    resolution: 512,
     frames: [],
-    sheetUrl: null,
-    loading: false
+    sheet: null,
+    history: [],
+    generating: false,
   }),
 
   actions: {
-    async loadInitial() {
-      this.styles = await fetchStyles()
-      this.models = await fetchModels()
+    reset() {
+      this.frames = []
+      this.sheet = null
     },
 
-    async runGeneration() {
-      const notify = useNotifyStore()
-      const tasks = useTaskStore()
-      const taskId = tasks.add("Generating sprites")
+    async generate(payload) {
+      this.generating = true
+      const data = await runSpriteWorkflow(payload)
+      this.generating = false
 
-      try {
-        this.loading = true
-        await generateSprites({
-          style: this.selectedStyle,
-          model: this.selectedModel,
-          resolution: this.resolution
-        })
+      this.frames = data.frames || []
+      this.sheet = data.sheet || null
 
-        tasks.update(taskId, { progress: 60 })
+      this.history.unshift({
+        timestamp: Date.now(),
+        payload,
+        frames: this.frames,
+        sheet: this.sheet,
+      })
 
-        this.frames = await fetchFrames()
-
-        tasks.complete(taskId)
-        notify.success("Sprites generated")
-      } catch (err) {
-        tasks.fail(taskId, "Sprite generation failed")
-        notify.error("Sprite generation failed")
-      } finally {
-        this.loading = false
-      }
+      return data
     },
 
-    async assemble() {
-      const tasks = useTaskStore()
-      const notify = useNotifyStore()
-      const taskId = tasks.add("Assembling sprite sheet")
-
-      try {
-        this.loading = true
-        await assembleSheet({ frames: this.frames })
-        this.sheetUrl = sheetPreviewUrl()
-
-        tasks.complete(taskId)
-        notify.success("Sprite sheet assembled")
-      } catch (err) {
-        tasks.fail(taskId, "Failed to assemble sprite sheet")
-        notify.error("Failed to assemble sprite sheet")
-      } finally {
-        this.loading = false
-      }
+    loadHistory(entry) {
+      this.frames = entry.frames
+      this.sheet = entry.sheet
     }
   }
 })

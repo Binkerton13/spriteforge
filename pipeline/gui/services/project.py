@@ -1,3 +1,4 @@
+# services/project.py
 import os
 import json
 import uuid
@@ -5,14 +6,11 @@ import logging
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-PROJECT_ROOT = "/workspace/projects"
+# CANONICAL PROJECT ROOT
+PROJECT_ROOT = "/workspace/pipeline/projects"
 
 
-# ----------------------------------------------------------------------
-# Helpers
-# ----------------------------------------------------------------------
 def _atomic_write(path: str, data: dict):
-    """Write JSON atomically to avoid corruption."""
     tmp = path + ".tmp"
     with open(tmp, "w") as f:
         json.dump(data, f, indent=4)
@@ -25,13 +23,34 @@ def _ensure_project_dir(project_id: str) -> str:
     return project_dir
 
 
-# ----------------------------------------------------------------------
-# Save / Load
-# ----------------------------------------------------------------------
+def ensure_project_scaffold(project_id: str):
+    """
+    Ensures the project directory contains:
+      motions/
+      styles/
+      workflows/
+      outputs/
+      sprites/
+      animations/
+      references/
+    """
+    base = _ensure_project_dir(project_id)
+
+    for sub in [
+        "motions",
+        "styles",
+        "workflows",
+        "outputs",
+        "sprites",
+        "animations",
+        "references",
+    ]:
+        os.makedirs(os.path.join(base, sub), exist_ok=True)
+
+    logging.info(f"[Project] Scaffold ensured for {project_id}")
+
+
 def save_project(data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Save a project safely and return the updated metadata.
-    """
     project_id = data.get("project_id") or str(uuid.uuid4())[:8]
     project_dir = _ensure_project_dir(project_id)
 
@@ -54,9 +73,6 @@ def save_project(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def load_project(project_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Load a project by ID.
-    """
     path = os.path.join(PROJECT_ROOT, project_id, "project.json")
 
     if not os.path.exists(path):
@@ -72,9 +88,6 @@ def load_project(project_id: str) -> Optional[Dict[str, Any]]:
 
 
 def list_projects() -> list:
-    """
-    Return a list of all project IDs.
-    """
     if not os.path.exists(PROJECT_ROOT):
         return []
 
@@ -88,13 +101,7 @@ def list_projects() -> list:
     return projects
 
 
-# ----------------------------------------------------------------------
-# GUI hydration
-# ----------------------------------------------------------------------
 def prepare_project_for_gui(project: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Returns a flattened structure the GUI can hydrate into fields.
-    """
     return {
         "project_id": project.get("project_id"),
         "name": project.get("name"),
@@ -102,6 +109,5 @@ def prepare_project_for_gui(project: Dict[str, Any]) -> Dict[str, Any]:
         "sprite": project.get("sprite", {}),
         "models": project.get("models", {}),
         "workflow": project.get("workflow", {}),
-        "batch": project.get("batch", {}),
-        "outputs": project.get("outputs", {})
+        "outputs": project.get("outputs", {}),
     }

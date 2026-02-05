@@ -6,7 +6,32 @@ echo "==============================================="
 echo " SpriteForge – Startup"
 echo "==============================================="
 
-# Activate venv
+# ---------------------------------------------------------
+# 0. Start Ollama daemon early
+# ---------------------------------------------------------
+echo "Starting Ollama daemon..."
+ollama serve &
+sleep 5
+
+# Pull model if missing
+if ! ollama list | grep -q "llama3"; then
+    echo "Pulling llama3 model..."
+    ollama pull llama3
+fi
+
+# Optional: apply Modelfile tuning if present
+if [ -f "/workspace/Modelfile" ]; then
+    echo "Applying Modelfile tuning..."
+    ollama create spriteforge-llama3 -f /workspace/Modelfile
+fi
+
+# Warm the model so first request is fast
+echo "Warming Ollama model..."
+ollama run llama3 "warmup" >/dev/null 2>&1 &
+
+# ---------------------------------------------------------
+# 1. Activate venv
+# ---------------------------------------------------------
 echo "Activating virtual environment..."
 source "${VIRTUAL_ENV}/bin/activate"
 
@@ -18,7 +43,7 @@ COMFY_MODELS="/workspace/models"
 HY_MOTION="/workspace/hy-motion"
 
 # ---------------------------------------------------------
-# 1. Ensure pipeline destination is a directory BEFORE use
+# 2. Ensure pipeline destination is a directory BEFORE use
 # ---------------------------------------------------------
 if [ -f "$PIPELINE_DST" ]; then
     echo "ERROR: $PIPELINE_DST exists as a file. Removing it."
@@ -28,7 +53,7 @@ fi
 mkdir -p "$PIPELINE_DST"
 
 # ---------------------------------------------------------
-# 2. Version-aware migration
+# 3. Version-aware migration
 # ---------------------------------------------------------
 PIPELINE_VERSION_SRC=$(cat "$PIPELINE_SRC/VERSION")
 PIPELINE_VERSION_DST=$(cat "$PIPELINE_DST/.version" 2>/dev/null || echo "0.0.0")
@@ -52,7 +77,7 @@ else
 fi
 
 # ---------------------------------------------------------
-# 3. Ensure workspace directories exist
+# 4. Ensure workspace directories exist
 # ---------------------------------------------------------
 echo "Ensuring workspace directories exist..."
 mkdir -p \
@@ -63,12 +88,12 @@ mkdir -p \
     /workspace/pipeline/logs
 
 # ---------------------------------------------------------
-# 4. HY-Motion (skip — installed in Dockerfile)
+# 5. HY-Motion (skip — installed in Dockerfile)
 # ---------------------------------------------------------
 echo "HY-Motion already installed in image — skipping runtime installation."
 
 # ---------------------------------------------------------
-# 5. Symlink ComfyUI models + custom nodes
+# 6. Symlink ComfyUI models + custom nodes
 # ---------------------------------------------------------
 echo "Linking ComfyUI models and custom nodes..."
 rm -rf /opt/comfyui/models
@@ -78,7 +103,7 @@ ln -s "$COMFY_MODELS" /opt/comfyui/models
 ln -s "$CUSTOM_NODES" /opt/comfyui/custom_nodes
 
 # ---------------------------------------------------------
-# 6. GPU info
+# 7. GPU info
 # ---------------------------------------------------------
 echo "Checking CUDA availability..."
 python - <<EOF
@@ -97,7 +122,7 @@ echo "==============================================="
 echo ""
 
 # ---------------------------------------------------------
-# 7. Launch supervisor
+# 8. Launch supervisor
 # ---------------------------------------------------------
 exec supervisord -c /etc/supervisord.conf
 # End of script

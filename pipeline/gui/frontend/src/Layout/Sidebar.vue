@@ -20,13 +20,16 @@
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
+  color: var(--fg-0);
 }
 
 .title {
-  color: var(--accent);
+  color: var(--accent-active);
   margin-bottom: 24px;
   font-size: 20px;
   font-weight: 600;
+  text-shadow: var(--glow);
+  transition: color var(--transition), text-shadow var(--transition);
 }
 
 nav {
@@ -40,16 +43,21 @@ nav {
   border-radius: var(--radius);
   color: var(--fg-0);
   text-decoration: none;
-  transition: background var(--transition), color var(--transition);
+  background: var(--bg-2);
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
 }
 
 .item:hover {
-  background: var(--bg-2);
+  background: var(--accent-teal);
+  color: white;
+  box-shadow: var(--glow-teal);
 }
 
 .active {
-  background: var(--accent);
+  background: var(--accent-active);
   color: white;
+  font-weight: 600;
+  box-shadow: var(--glow-strong);
 }
 
 </style>

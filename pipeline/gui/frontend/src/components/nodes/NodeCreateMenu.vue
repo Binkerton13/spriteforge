@@ -1,93 +1,107 @@
 <template>
-  <div class="overlay" v-if="visible" @click.self="$emit('close')">
-    <div class="menu">
-      <input
-        v-model="search"
-        placeholder="Search nodes..."
-        class="search"
-      />
+  <div
+    v-if="visible"
+    class="node-menu"
+    :style="{ top: position.y + 'px', left: position.x + 'px' }"
+    @click.stop
+  >
+    <div class="menu-header">
+      <strong>Create Node</strong>
+      <button class="close-btn" @click="$emit('close')">✕</button>
+    </div>
 
-      <div class="list">
-        <div
-          v-for="n in filtered"
-          :key="n"
-          class="item"
-          @click="choose(n)"
-        >
-          {{ n }}
-        </div>
+    <div class="menu-list">
+      <div
+        v-for="node in nodeTypes"
+        :key="node.type"
+        class="menu-item"
+        @click="select(node.type)"
+      >
+        {{ node.label }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useWorkflowsStore } from '../../stores/workflows'
+import { defineProps, defineEmits } from 'vue'
 
+/* PROPS */
 const props = defineProps({
   visible: Boolean,
-  position: Object
+  position: { type: Object, default: () => ({ x: 0, y: 0 }) },
 })
 
+/* EMITS */
 const emit = defineEmits(['close', 'create'])
 
-const search = ref('')
-const store = useWorkflowsStore()
+/* NODE TYPES */
+const nodeTypes = [
+  { type: 'load_image', label: 'Load Image' },
+  { type: 'load_motion', label: 'Load Motion' },
+  { type: 'ip_adapter', label: 'IP Adapter' },
+  { type: 'controlnet', label: 'ControlNet' },
+  { type: 'render', label: 'Render Sprite' },
+  { type: 'save_output', label: 'Save Output' },
+]
 
-const filtered = computed(() =>
-  store.availableNodeTypes.filter(n =>
-    n.toLowerCase().includes(search.value.toLowerCase())
-  )
-)
-
-function choose(type) {
+/* ACTION */
+function select(type) {
   emit('create', type)
-  search.value = ''
+  emit('close')
 }
 </script>
 
 <style scoped>
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
+.node-menu {
+  position: absolute;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px;
+  width: 180px;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  animation: fadeIn 0.12s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.menu-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #333;
+  margin-bottom: 6px;
 }
 
-.menu {
-  margin-top: 80px;
-  background: var(--bg-2);
-  padding: 16px;
-  border-radius: var(--radius);
-  width: 300px;
-  border: 1px solid var(--border);
-}
-
-.search {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 12px;
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  color: var(--fg-0);
-  border-radius: var(--radius);
-}
-
-.list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.item {
-  padding: 8px;
-  border-radius: var(--radius);
+.close-btn {
+  background: none;
+  border: none;
+  color: #aaa;
   cursor: pointer;
+  font-size: 14px;
 }
 
-.item:hover {
-  background: var(--bg-3);
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-item {
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #2a2a2a;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.menu-item:hover {
+  background: #3a3a3a;
 }
 </style>

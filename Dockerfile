@@ -113,6 +113,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN git lfs install --system || true
 
+# Install Ollama (daemon only, no model included) ---
+RUN curl -fsSL https://ollama.com/install.sh | bash
+
 # Copy Python environment (base venv)
 COPY --from=deps /opt/venv /opt/venv
 

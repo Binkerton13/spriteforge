@@ -1,26 +1,96 @@
-/* ============================
-   SpriteForge Global Theme
-   VSCode-inspired dark palette
-   ============================ */
+/* ============================================
+   SpriteForge Mystic‑Industrial Global Theme
+   Multi‑Accent System + Dynamic Server Glows
+   ============================================ */
 
 :root {
-  --bg-0: #1e1e1e;
-  --bg-1: #252526;
-  --bg-2: #2d2d30;
-  --bg-3: #3c3c3c;
+  /* ============================
+     BASE SURFACES (Industrial)
+     ============================ */
+  --bg-0: #16181a;   /* deep steel */
+  --bg-1: #1f2327;   /* panel base */
+  --bg-2: #262b31;   /* raised panel */
+  --bg-3: #343b44;   /* borders / separators */
 
-  --fg-0: #d4d4d4;
-  --fg-1: #cccccc;
-  --fg-muted: #888;
+  /* ============================
+     TEXT
+     ============================ */
+  --fg-0: #e5e7eb;
+  --fg-1: #cbd5e1;
+  --fg-muted: #8a8f98;
 
-  --accent: #0e639c;
-  --accent-hover: #1177bb;
+  /* ============================
+     MULTI‑ACCENT SYSTEM
+     ============================ */
 
+  /* Orange (offline / ember) */
+  --accent-orange: #ff9f3a;
+  --accent-orange-deep: #ff6a2a;
+
+  /* Green (online) */
+  --accent-green: #3aff7a;
+
+  /* Mystic secondary palette */
+  --accent-teal: #3ddad7;
+  --accent-purple: #8a4fff;
+
+  /* ============================
+     GLOW SYSTEM
+     ============================ */
+
+  /* Orange glows */
+  --glow-orange: 0 0 12px var(--accent-orange);
+  --glow-orange-deep: 0 0 6px var(--accent-orange),
+                      0 0 14px var(--accent-orange-deep);
+
+  /* Green glow */
+  --glow-green: 0 0 12px var(--accent-green);
+
+  /* Teal + purple ambient glows */
+  --glow-teal: 0 0 10px var(--accent-teal);
+  --glow-purple: 0 0 10px var(--accent-purple);
+
+  /* ============================
+     ACTIVE ACCENT (DEFAULT)
+     This is used for buttons, highlights, etc.
+     We set it to orange by default.
+     ============================ */
+  --accent-active: var(--accent-orange);
+  --accent-hover: var(--accent-orange-deep);
+  --glow: var(--glow-orange);
+  --glow-strong: var(--glow-orange-deep);
+
+  /* ============================
+     BORDERS / RADIUS / TRANSITIONS
+     ============================ */
   --border: #3f3f46;
-
   --radius: 6px;
   --transition: 0.15s ease;
 }
+
+/* ============================================
+   SERVER STATE OVERRIDES
+   ============================================ */
+
+/* ONLINE → green glow, but ONLY for accent-active */
+body.online {
+  --accent-active: var(--accent-green);
+  --accent-hover: #6dff9c;
+  --glow: var(--glow-green);
+  --glow-strong: 0 0 18px var(--accent-green);
+}
+
+/* OFFLINE → orange glow (default) */
+body.offline {
+  --accent-active: var(--accent-orange);
+  --accent-hover: var(--accent-orange-deep);
+  --glow: var(--glow-orange);
+  --glow-strong: var(--glow-orange-deep);
+}
+
+/* ============================================
+   LIGHT MODE (kept intact)
+   ============================================ */
 :root.light {
   --bg-0: #f5f5f5;
   --bg-1: #eaeaea;
@@ -31,13 +101,15 @@
   --fg-1: #444;
   --fg-muted: #777;
 
-  --accent: #0066cc;
+  --accent-active: #0066cc;
   --accent-hover: #3388ff;
 
   --border: #bbb;
 }
 
-/* Global reset */
+/* ============================================
+   GLOBAL RESET
+   ============================================ */
 body {
   margin: 0;
   background: var(--bg-0);
@@ -45,7 +117,9 @@ body {
   font-family: "Inter", "Segoe UI", sans-serif;
 }
 
-/* Scrollbars */
+/* ============================================
+   SCROLLBARS
+   ============================================ */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--bg-3) var(--bg-1);
@@ -64,7 +138,9 @@ body {
   background: var(--bg-1);
 }
 
-/* Panels */
+/* ============================================
+   PANELS
+   ============================================ */
 .panel {
   background: var(--bg-2);
   padding: 16px;
@@ -73,27 +149,34 @@ body {
   margin-bottom: 20px;
 }
 
-/* Buttons */
+/* ============================================
+   BUTTONS
+   ============================================ */
 button {
-  background: var(--accent);
+  background: var(--accent-active);
   color: white;
   padding: 10px 16px;
   border-radius: var(--radius);
   border: none;
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background var(--transition), box-shadow var(--transition);
+  box-shadow: var(--glow);
 }
 
 button:hover {
   background: var(--accent-hover);
+  box-shadow: var(--glow-strong);
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-/* Inputs */
+/* ============================================
+   INPUTS
+   ============================================ */
 input, select, textarea {
   background: var(--bg-1);
   color: var(--fg-0);
@@ -101,15 +184,18 @@ input, select, textarea {
   padding: 8px;
   border-radius: var(--radius);
   width: 100%;
-  transition: border var(--transition);
+  transition: border var(--transition), box-shadow var(--transition);
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: var(--accent);
+  border-color: var(--accent-active);
+  box-shadow: var(--glow);
   outline: none;
 }
 
-/* Headings */
+/* ============================================
+   HEADINGS
+   ============================================ */
 h1 {
   font-size: 26px;
   margin-bottom: 20px;
@@ -125,5 +211,6 @@ h2 {
 h3 {
   font-size: 16px;
   margin-bottom: 8px;
-  color: var(--accent);
+  color: var(--accent-active);
+  text-shadow: var(--glow);
 }

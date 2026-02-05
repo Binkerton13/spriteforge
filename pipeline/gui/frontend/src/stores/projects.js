@@ -1,74 +1,43 @@
+// src/stores/projects.js
 import { defineStore } from 'pinia'
-import { fetchProjects, loadProject, saveProject } from '../api/projects'
-import { useNotifyStore } from './notify'
+import { listProjects, createProject, loadProject, updateProject } from '../api/projects'
 
 export const useProjectsStore = defineStore('projects', {
   state: () => ({
-    list: [],
-    currentId: null,
-    metadata: {
-      name: '',
-      description: ''
-    },
-    assets: {
-      motions: [],
-      sprites: [],
-      sheets: [],
-      workflows: []
-    },
-    loading: false
+    projects: [],
+    activeProject: null,
+    activeProjectId: null,
+    loading: false,
   }),
 
   actions: {
-    async loadList() {
-      this.list = await fetchProjects()
+    async loadProjects() {
+      this.loading = true
+      const data = await listProjects()
+      this.projects = data.projects || []
+      this.loading = false
     },
 
-    async load(id) {
-      const notify = useNotifyStore()
-
-      try {
-        this.loading = true
-        const data = await loadProject(id)
-        this.currentId = id
-        this.metadata = data.metadata
-        this.assets = data.assets
-      } catch (err) {
-        notify.error("Failed to load project")
-      } finally {
-        this.loading = false
-      }
+    async selectProject(project_id) {
+      const data = await loadProject(project_id)
+      this.activeProject = data.project || null
+      this.activeProjectId = project_id
     },
 
-    async save() {
-      const tasks = useTaskStore()
-      const notify = useNotifyStore()
-      const taskId = tasks.add("Saving project")
-
-      try {
-        await saveProject({
-          id: this.currentId,
-          metadata: this.metadata,
-          assets: this.assets
-        })
-
-        tasks.complete(taskId)
-        notify.success("Project saved")
-      } catch (err) {
-        tasks.fail(taskId, "Project save failed")
-        notify.error("Project save failed")
-      }
+    async create(name) {
+      const data = await createProject(name)
+      await this.loadProjects()
+      return data
     },
 
-    createNew(name) {
-      this.currentId = `project_${Date.now()}`
-      this.metadata = { name, description: '' }
-      this.assets = {
-        motions: [],
-        sprites: [],
-        sheets: [],
-        workflows: []
-      }
+    async update(metadata) {
+      if (!this.activeProjectId) return
+      await updateProject(this.activeProjectId, metadata)
+      await this.selectProject(this.activeProjectId)
+    },
+
+    ensureLoaded() {
+      if (!this.projects.length) this.loadProjects()
     }
   }
 })
